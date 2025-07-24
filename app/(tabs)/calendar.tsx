@@ -1,9 +1,8 @@
 import { ThemedText } from '@/components/ThemedText';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { SafeAreaView, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { PanGestureHandlerGestureEvent } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Constants and mock data
@@ -95,21 +94,6 @@ export default function CalendarTab() {
   const today = new Date();
   const [currentDate, setCurrentDate] = useState(today);
   const [selectedDate, setSelectedDate] = useState(today);
-  const [prayerTimes, setPrayerTimes] = useState<Record<string, string>>({});
-  const [reminders, setReminders] = useState(INITIAL_REMINDERS);
-  const [now, setNow] = useState(new Date());
-
-  // Update time every second for countdown
-  useEffect(() => {
-    const interval = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(interval);
-  }, []);
-
-  // Update prayer times when selectedDate changes
-  useEffect(() => {
-    const dateKey = `${selectedDate.getFullYear()}-${selectedDate.getMonth() + 1}-${selectedDate.getDate()}`;
-    setPrayerTimes(MOCK_PRAYER_TIMES[dateKey] || {});
-  }, [selectedDate]);
 
   // Calendar navigation
   const year = currentDate.getFullYear();
@@ -146,42 +130,10 @@ export default function CalendarTab() {
     );
   };
 
-  // Next prayer and countdown (only for today)
-  const nextPrayer = useMemo(() => getNextPrayer(now, prayerTimes), [now, prayerTimes]);
-  const countdown = useMemo(() => getCountdown(now, nextPrayer.time), [now, nextPrayer]);
-
-  const handleToggleReminder = (id: number) => {
-    setReminders((prev) => prev.map((r) => (r.id === id ? { ...r, enabled: !r.enabled } : r)));
-  };
-
-  const todayStr = useMemo(() =>
-    selectedDate.toLocaleDateString('en-US', {
-      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
-    }), [selectedDate]);
-
-  // Gesture state
-  const [dragX, setDragX] = useState(0);
-  const SWIPE_THRESHOLD = 60;
-
-  const onGestureEvent = (event: PanGestureHandlerGestureEvent) => {
-    setDragX(event.nativeEvent.translationX);
-  };
-  const onHandlerStateChange = (event: PanGestureHandlerGestureEvent) => {
-    if (event.nativeEvent.state === 5) { // 5 = END
-      if (dragX < -SWIPE_THRESHOLD) {
-        goToNextMonth();
-      } else if (dragX > SWIPE_THRESHOLD) {
-        goToPreviousMonth();
-      }
-      setDragX(0);
-    }
-  };
-
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Colors[colorScheme].background }}>
-      {/* Qibla-style Title */}
       <View style={{ paddingTop: 16, paddingBottom: 8, alignItems: 'center' }}>
-        <ThemedText type="title" style={{ fontWeight: 'bold', color: Colors[colorScheme].primary, fontSize: 28 }}>Prayer Calendar</ThemedText>
+        <ThemedText type="title" style={{ fontWeight: 'bold', color: Colors[colorScheme].primary, fontSize: 28 }}>Calendar</ThemedText>
       </View>
       {/* Month Info (no background) */}
       <View style={{ alignItems: 'center', marginBottom: 8 }}>
@@ -248,30 +200,12 @@ export default function CalendarTab() {
               );
             })}
           </View>
-          {/* Prayer Times Section */}
-          <View style={{ borderTopWidth: 1, borderTopColor: '#a7f3d0', padding: 14, backgroundColor: '#d1fae5', marginHorizontal: 8, borderRadius: 18, marginTop: 0, shadowColor: '#10B981', shadowOpacity: 0.08, shadowRadius: 12, elevation: 2 }}>
-            <ThemedText style={{ fontSize: 18, fontWeight: 'bold', color: '#065f46', marginBottom: 10, textAlign: 'center' }}>Prayer Times</ThemedText>
-            {selectedDate ? (
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}>
-                {PRAYER_NAMES.map((prayer) => (
-                  <View key={prayer.key} style={{ backgroundColor: '#fff', borderRadius: 12, padding: 10, alignItems: 'center', flexBasis: '30%', margin: 4, borderWidth: 1, borderColor: '#a7f3d0', shadowColor: '#10B981', shadowOpacity: 0.06, shadowRadius: 6, elevation: 1 }}>
-                    <ThemedText style={{ color: '#059669', fontWeight: 'bold', fontSize: 12, letterSpacing: 1, textTransform: 'uppercase' }}>{prayer.name}</ThemedText>
-                    <ThemedText style={{ color: '#065f46', fontWeight: 'bold', fontSize: 18 }}>{prayerTimes[prayer.key] || '--:--'}</ThemedText>
-                  </View>
-                ))}
-              </View>
-            ) : (
-              <ThemedText style={{ textAlign: 'center', color: '#059669', marginVertical: 12 }}>Select a date to view prayer times</ThemedText>
-            )}
-            {selectedDate && (
-              <View style={{ marginTop: 12, alignItems: 'center' }}>
-                <ThemedText style={{ color: '#059669', fontSize: 15 }}>
-                  {selectedDate.toLocaleDateString('en-US', {
-                    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-                  })}
-                </ThemedText>
-              </View>
-            )}
+          {/* Word of the Day */}
+          <View style={{ marginHorizontal: 16, marginTop: 12, padding: 14, backgroundColor: '#f3f4f6', borderRadius: 14, alignItems: 'center' }}>
+            <ThemedText style={{ color: Colors[colorScheme].primary, fontWeight: 'bold', fontSize: 16, marginBottom: 4 }}>Word of the Day</ThemedText>
+            <ThemedText style={{ color: '#374151', fontSize: 15, textAlign: 'center' }} numberOfLines={3}>
+              "Verily, with hardship comes ease." (Quran 94:6)
+            </ThemedText>
           </View>
         </View>
       </ScrollView>

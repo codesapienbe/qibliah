@@ -11,6 +11,7 @@ import {
   FlatList,
   Image,
   Keyboard,
+  KeyboardAvoidingView,
   Platform,
   SafeAreaView,
   StyleSheet,
@@ -116,13 +117,13 @@ export default function HomeScreen() {
   const renderAvatar = (sender: string) => {
     if (sender === 'ai') {
       return (
-        <View style={styles.avatarCircle}>
-          <Ionicons name="chatbubbles" size={22} color="#10B981" />
+        <View style={[styles.avatarCircle, { backgroundColor: Colors[colorScheme].surface, borderColor: Colors[colorScheme].primary }] }>
+          <Ionicons name="chatbubbles" size={22} color={Colors[colorScheme].primary} />
         </View>
       );
     }
     return (
-      <View style={[styles.avatarCircle, { backgroundColor: '#2563eb' }] }>
+      <View style={[styles.avatarCircle, { backgroundColor: '#10B981', borderColor: '#10B981' }] }>
         <Ionicons name="person" size={22} color="#fff" />
       </View>
     );
@@ -153,69 +154,75 @@ export default function HomeScreen() {
       <View style={{ paddingTop: 16, paddingBottom: 8, alignItems: 'center' }}>
         <ThemedText type="title" style={{ fontWeight: 'bold', color: Colors[colorScheme].primary, fontSize: 28 }}>Quranic AI</ThemedText>
       </View>
-      <FlatList
-        ref={flatListRef}
-        data={messages}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 16, paddingTop: 0, backgroundColor: Colors[colorScheme].background }}
-        onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
-        onLayout={() => flatListRef.current?.scrollToEnd({ animated: false })}
-        ListHeaderComponent={
-          <View style={styles.header}>
-            <Image source={require('@/assets/images/icon.png')} style={styles.headerLogo} />
-            <ThemedText style={styles.headerTitle}>Quranic AI</ThemedText>
-            <TouchableOpacity style={styles.settingsButton}>
-              <Ionicons name="settings-outline" size={24} color="#222" />
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={20}
+      >
+        <FlatList
+          ref={flatListRef}
+          data={messages}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 16, paddingTop: 0, backgroundColor: Colors[colorScheme].background }}
+          onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+          onLayout={() => flatListRef.current?.scrollToEnd({ animated: false })}
+          ListHeaderComponent={
+            <View style={styles.header}>
+              <Image source={require('@/assets/images/icon.png')} style={styles.headerLogo} />
+              <ThemedText style={styles.headerTitle}>Quranic AI</ThemedText>
+              <TouchableOpacity style={styles.settingsButton}>
+                <Ionicons name="settings-outline" size={24} color="#222" />
+              </TouchableOpacity>
+            </View>
+          }
+          ListFooterComponent={sending ? (
+            <View style={[styles.messageRow, styles.aiRow]}>
+              {renderAvatar('ai')}
+              <ThemedView style={[styles.messageBubble, styles.aiBubble]}>
+                <View style={styles.loadingDotsContainer}>
+                  <View style={[styles.loadingDot, styles.loadingDot1]} />
+                  <View style={[styles.loadingDot, styles.loadingDot2]} />
+                  <View style={[styles.loadingDot, styles.loadingDot3]} />
+                </View>
+              </ThemedView>
+            </View>
+          ) : null}
+        />
+        <View style={[styles.inputBarWrapper, { paddingBottom: insets.bottom + 20 }]}>
+          <View style={styles.inputBar}>
+            <TouchableOpacity style={styles.plusButton} onPress={handlePickFile}>
+              <Ionicons name="add" size={26} color="#2563eb" />
+            </TouchableOpacity>
+            <View style={styles.textInputWrapper}>
+              <TextInput
+                style={styles.input}
+                placeholder="Type your message..."
+                placeholderTextColor="#aaa"
+                value={input}
+                onChangeText={setInput}
+                onSubmitEditing={handleSend}
+                editable={!sending}
+                maxLength={500}
+                returnKeyType="send"
+                multiline
+                numberOfLines={3}
+              />
+            </View>
+            <TouchableOpacity style={styles.micButton} onPress={handleVoiceInput}>
+              <Ionicons name="mic" size={22} color="#10B981" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.sendButton, { backgroundColor: input.trim() && !sending ? '#10B981' : '#ccc' }]}
+              onPress={handleSend}
+              disabled={!input.trim() || sending}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="send" size={20} color="#fff" />
             </TouchableOpacity>
           </View>
-        }
-        ListFooterComponent={sending ? (
-          <View style={[styles.messageRow, styles.aiRow]}>
-            {renderAvatar('ai')}
-            <ThemedView style={[styles.messageBubble, styles.aiBubble]}>
-              <View style={styles.loadingDotsContainer}>
-                <View style={[styles.loadingDot, styles.loadingDot1]} />
-                <View style={[styles.loadingDot, styles.loadingDot2]} />
-                <View style={[styles.loadingDot, styles.loadingDot3]} />
-              </View>
-            </ThemedView>
-          </View>
-        ) : null}
-      />
-      <View style={[styles.inputBarWrapper, { paddingBottom: insets.bottom + 20 }]}>
-        <View style={styles.inputBar}>
-          <TouchableOpacity style={styles.plusButton} onPress={handlePickFile}>
-            <Ionicons name="add" size={26} color="#2563eb" />
-          </TouchableOpacity>
-          <View style={styles.textInputWrapper}>
-            <TextInput
-              style={styles.input}
-              placeholder="Type your message..."
-              placeholderTextColor="#aaa"
-              value={input}
-              onChangeText={setInput}
-              onSubmitEditing={handleSend}
-              editable={!sending}
-              maxLength={500}
-              returnKeyType="send"
-              multiline
-              numberOfLines={3}
-            />
-          </View>
-          <TouchableOpacity style={styles.micButton} onPress={handleVoiceInput}>
-            <Ionicons name="mic" size={22} color="#10B981" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.sendButton, { backgroundColor: input.trim() && !sending ? '#10B981' : '#ccc' }]}
-            onPress={handleSend}
-            disabled={!input.trim() || sending}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="send" size={20} color="#fff" />
-          </TouchableOpacity>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -277,7 +284,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   userBubble: {
-    backgroundColor: 'linear-gradient(90deg, #10B981 0%, #2563eb 100%)', // fallback for RN: use blue/green
+    backgroundColor: '#10B981',
     borderColor: '#10B981',
     alignSelf: 'flex-end',
   },

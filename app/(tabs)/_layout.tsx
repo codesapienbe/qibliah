@@ -37,7 +37,14 @@ export default function TabLayout() {
         name="calendar"
         options={{
           title: 'Calendar',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="calendar" color={color} />,
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="calendar" color={color} />, // Calendar tab
+        }}
+      />
+      <Tabs.Screen
+        name="prayer"
+        options={{
+          title: 'Prayer',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="clock" color={color} />, // Prayer tab
         }}
       />
       <Tabs.Screen
