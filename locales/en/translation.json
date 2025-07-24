@@ -110,5 +110,6 @@
   "set_api_key": "Set API Key",
   "home": "Home",
   "prayer": "Prayer",
-  "qibla": "Qibla"
+  "qibla": "Qibla",
+  "assistant_goodbye": "Ma'a salama! May peace be upon you. If you need anything else, just ask! 👋"
 } 

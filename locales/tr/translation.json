@@ -110,5 +110,6 @@
   "set_api_key": "API Anahtarı Ayarla",
   "home": "Ana Sayfa",
   "prayer": "Namaz",
-  "qibla": "Kıble"
+  "qibla": "Kıble",
+  "assistant_goodbye": "Ma'a selâma! Allah'ın selamı üzerinize olsun. Başka bir sorunuz olursa buradayım! 👋"
 } 

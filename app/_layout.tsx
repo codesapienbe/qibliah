@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
@@ -11,6 +12,8 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import React from 'react';
+import { Image } from 'react-native';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -19,8 +22,20 @@ export default function RootLayout() {
   });
   const router = useRouter();
 
-  if (!loaded) {
-    // Async font loading only occurs in development.
+  // Ensure language is set from storage before rendering
+  const [langReady, setLangReady] = React.useState(false);
+  React.useEffect(() => {
+    (async () => {
+      const storedLang = await AsyncStorage.getItem('app_language');
+      if (storedLang && storedLang !== i18n.language) {
+        await i18n.changeLanguage(storedLang);
+      }
+      setLangReady(true);
+    })();
+  }, []);
+
+  if (!loaded || !langReady) {
+    // Wait for fonts and language
     return null;
   }
 
@@ -33,6 +48,13 @@ export default function RootLayout() {
               <Stack.Screen
                 name="(tabs)"
                 options={{
+                  headerTitle: () => (
+                    <Image
+                      source={require('../assets/images/icon.png')}
+                      style={{ width: 36, height: 36, borderRadius: 8 }}
+                      resizeMode="contain"
+                    />
+                  ),
                   headerRight: () => (
                     <Ionicons
                       name="settings-outline"

@@ -4,6 +4,7 @@ import { ThemedView } from '@/components/ThemedView';
 import { Colors } from '@/constants/Colors';
 import { useAssistantMessages } from '@/hooks/useAssistantMessages';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { formatSurahAyatMessage } from '@/utils/formatSurahAyatMessage';
 import { deleteGroqToken, getGroqToken, saveGroqToken } from '@/utils/tokenStorage';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -21,6 +22,7 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
+import Markdown from 'react-native-markdown-display';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const INITIAL_MESSAGES = [
@@ -36,7 +38,7 @@ export default function HomeScreen() {
   const { t, i18n } = useTranslation();
   const [messages, setMessages, messagesLoading] = useAssistantMessages([
     { ...INITIAL_MESSAGES[0], text: t('assistant_welcome') },
-  ]);
+  ], t);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
   const colorScheme = useColorScheme() ?? 'light';
@@ -66,9 +68,11 @@ export default function HomeScreen() {
     // Update welcome message when language changes
     setMessages(prev => {
       if (prev.length > 0 && prev[0].isInitial) {
+        // If the first message is initial, update its text to the new language
         return [{ ...prev[0], text: t('assistant_welcome') }, ...prev.slice(1)];
       }
-      return prev;
+      // If the first message is not initial, prepend the welcome message in the new language
+      return [{ ...INITIAL_MESSAGES[0], text: t('assistant_welcome') }, ...prev];
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [i18n.language]);
@@ -100,6 +104,22 @@ export default function HomeScreen() {
     alert('Voice input not implemented yet.');
   };
 
+  const GOODBYE_PATTERNS = [
+    /\bbye\b/i,
+    /\bgoodbye\b/i,
+    /\bsee you\b/i,
+    /\bfarewell\b/i,
+    /\bma'a salama\b/i,
+    /\bgüle güle\b/i,
+    /\bhoşça kal\b/i,
+    /\bselam\b/i,
+    /\btot ziens\b/i,
+    /\bvaarwel\b/i,
+    /\bdag\b/i,
+    /\bdoei\b/i,
+    /\bpeace\b/i
+  ];
+
   const handleSend = async () => {
     if (!input.trim() || sending) return;
     if (!groqApiKey) {
@@ -116,6 +136,24 @@ export default function HomeScreen() {
     setInput('');
     setSending(true);
     Keyboard.dismiss();
+
+    // Goodbye detection
+    const isGoodbye = GOODBYE_PATTERNS.some((pattern) => pattern.test(userMessage.text));
+    if (isGoodbye) {
+      const aiMessage = {
+        id: `ai-${Date.now()}`,
+        sender: 'ai',
+        text: t('assistant_goodbye'),
+        isInitial: false,
+      };
+      setMessages((prev) => [...prev, aiMessage]);
+      setSending(false);
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+      return;
+    }
+
     let aiMessageText = '';
     try {
       let chatHistory = [];
@@ -176,7 +214,15 @@ export default function HomeScreen() {
               : styles.aiBubble,
           ]}
         >
-          <ThemedText style={{ color: isUser ? '#fff' : '#222' }}>{item.text}</ThemedText>
+          {isUser ? (
+            <ThemedText style={{ color: isUser ? '#fff' : '#222' }}>{item.text}</ThemedText>
+          ) : (
+            <Markdown
+              style={{ body: { color: '#222', fontSize: 16, lineHeight: 24 } }}
+            >
+              {formatSurahAyatMessage({ text: item.text, language: i18n.language, t })}
+            </Markdown>
+          )}
         </ThemedView>
         {isUser && renderAvatar('user')}
       </View>
@@ -188,15 +234,14 @@ export default function HomeScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: Colors[colorScheme].background }}>
       <View style={{ paddingTop: 16, paddingBottom: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
         <TouchableOpacity style={{ position: 'absolute', left: 16, top: 16, zIndex: 2 }} onPress={() => { setPendingRemember(rememberChat); setShowRememberModal(true); }}>
-          <Ionicons name={rememberChat ? 'bulb' : 'bulb-outline'} size={26} color={Colors[colorScheme].primary} />
+          <Ionicons name="analytics-outline" size={26} color={Colors[colorScheme].primary} />
         </TouchableOpacity>
         <ThemedText type="title" style={{ fontWeight: 'bold', color: Colors[colorScheme].primary, fontSize: 28, marginHorizontal: 56, textAlign: 'center', flex: 1 }}>{t('quranic_ai')}</ThemedText>
         <View style={{ flexDirection: 'row', position: 'absolute', right: 16, top: 16, zIndex: 2 }}>
-          <TouchableOpacity style={{ marginRight: 16 }} onPress={() => setMessages(INITIAL_MESSAGES)}>
+          <TouchableOpacity style={{ marginRight: 16 }} onPress={() => setMessages([
+            { ...INITIAL_MESSAGES[0], text: t('assistant_welcome') }
+          ])}>
             <Ionicons name="trash-outline" size={26} color={Colors[colorScheme].primary} />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => setShowApiKeyPrompt(true)}>
-            <Ionicons name="settings-outline" size={28} color={Colors[colorScheme].primary} />
           </TouchableOpacity>
         </View>
       </View>
