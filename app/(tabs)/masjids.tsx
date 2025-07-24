@@ -4,7 +4,7 @@ import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import * as Location from 'expo-location';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Linking, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Linking, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 // Try to use Slider if available
@@ -64,9 +64,16 @@ function openCall() {
 export default function MasjidsTab() {
   const colorScheme = useColorScheme() ?? 'light';
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [manualLocation, setManualLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [permissionDenied, setPermissionDenied] = useState(false);
   const [maxDistance, setMaxDistance] = useState(10); // km
+  const [manualCountry, setManualCountry] = useState('');
+  const [manualCity, setManualCity] = useState('');
+  const [manualPostcode, setManualPostcode] = useState('');
+  const [manualError, setManualError] = useState('');
+  const [geocoding, setGeocoding] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -75,25 +82,55 @@ export default function MasjidsTab() {
       try {
         let { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== 'granted') {
-          setErrorMsg('Permission to access location was denied.');
+          setErrorMsg('Permission to access location was denied. You can enter your location manually.');
+          setPermissionDenied(true);
           setLoading(false);
           return;
         }
         let loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
         setLocation({ lat: loc.coords.latitude, lng: loc.coords.longitude });
+        setPermissionDenied(false);
       } catch (e) {
-        setErrorMsg('Could not get location.');
+        setErrorMsg('Could not get location. You can enter your location manually.');
+        setPermissionDenied(true);
       } finally {
         setLoading(false);
       }
     })();
   }, []);
 
+  // Use manual location if permission denied and manual location is set
+  const effectiveLocation = permissionDenied && manualLocation ? manualLocation : location;
+
+  // Manual location submit handler (geocode address)
+  const handleManualLocationSubmit = async () => {
+    if (!manualCountry || !manualCity) {
+      setManualError('Please enter both country and city.');
+      return;
+    }
+    setManualError('');
+    setGeocoding(true);
+    try {
+      const address = `${manualPostcode ? manualPostcode + ', ' : ''}${manualCity}, ${manualCountry}`;
+      const results = await Location.geocodeAsync(address);
+      if (!results || results.length === 0) {
+        setManualError('Could not find location for the entered address.');
+        setGeocoding(false);
+        return;
+      }
+      setManualLocation({ lat: results[0].latitude, lng: results[0].longitude });
+    } catch (e) {
+      setManualError('Geocoding failed. Please check your input.');
+    } finally {
+      setGeocoding(false);
+    }
+  };
+
   // Calculate distances
   const masjidsWithDistance = MASJIDS.map((m) => {
     let distance = null;
-    if (location) {
-      distance = haversineDistance(location.lat, location.lng, m.coordinates[0], m.coordinates[1]);
+    if (effectiveLocation) {
+      distance = haversineDistance(effectiveLocation.lat, effectiveLocation.lng, m.coordinates[0], m.coordinates[1]);
     }
     return { ...m, distance };
   }).sort((a, b) => {
@@ -107,6 +144,46 @@ export default function MasjidsTab() {
     m => m.distance != null && m.distance <= maxDistance
   );
 
+  // Manual input form if permission denied and no manual location set
+  if (permissionDenied && !manualLocation) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: Colors[colorScheme].background, justifyContent: 'center', alignItems: 'center' }}>
+        <ThemedText type="title" style={{ fontWeight: 'bold', color: Colors[colorScheme].primary, fontSize: 28, marginBottom: 16 }}>
+          Enter Your Location
+        </ThemedText>
+        <TextInput
+          style={{ borderWidth: 1, borderColor: Colors[colorScheme].cardBorder, borderRadius: 8, padding: 10, width: 220, marginBottom: 12, color: Colors[colorScheme].text }}
+          placeholder="Country (e.g. Belgium)"
+          placeholderTextColor={Colors[colorScheme].text}
+          value={manualCountry}
+          onChangeText={setManualCountry}
+        />
+        <TextInput
+          style={{ borderWidth: 1, borderColor: Colors[colorScheme].cardBorder, borderRadius: 8, padding: 10, width: 220, marginBottom: 12, color: Colors[colorScheme].text }}
+          placeholder="City (e.g. Zele)"
+          placeholderTextColor={Colors[colorScheme].text}
+          value={manualCity}
+          onChangeText={setManualCity}
+        />
+        <TextInput
+          style={{ borderWidth: 1, borderColor: Colors[colorScheme].cardBorder, borderRadius: 8, padding: 10, width: 220, marginBottom: 12, color: Colors[colorScheme].text }}
+          placeholder="Postcode (optional)"
+          placeholderTextColor={Colors[colorScheme].text}
+          value={manualPostcode}
+          onChangeText={setManualPostcode}
+          keyboardType="numeric"
+        />
+        {manualError ? <Text style={{ color: Colors[colorScheme].error, marginBottom: 8 }}>{manualError}</Text> : null}
+        <TouchableOpacity onPress={handleManualLocationSubmit} style={{ backgroundColor: Colors[colorScheme].primary, borderRadius: 8, paddingHorizontal: 20, paddingVertical: 10, marginTop: 8 }} disabled={geocoding}>
+          <Text style={{ color: 'white', fontWeight: 'bold' }}>{geocoding ? 'Looking up...' : 'Submit'}</Text>
+        </TouchableOpacity>
+        <Text style={{ color: Colors[colorScheme].text, marginTop: 20, textAlign: 'center', fontSize: 13 }}>
+          Location permission is required for automatic detection. You can enter your country, city, and postcode to look up your location.
+        </Text>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Colors[colorScheme].background }}>
       <View style={{ paddingTop: 16, paddingBottom: 8, alignItems: 'center' }}>
@@ -114,7 +191,7 @@ export default function MasjidsTab() {
       </View>
       <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 16, paddingTop: 0, backgroundColor: Colors[colorScheme].background }}>
         {/* Distance Filter */}
-        {location && (
+        {effectiveLocation && (
           <View style={styles.filterRow}>
             <ThemedText style={{ marginRight: 8 }}>Within</ThemedText>
             {Slider ? (
@@ -146,12 +223,12 @@ export default function MasjidsTab() {
           </View>
         )}
         {/* Map View */}
-        {location && (
+        {effectiveLocation && (
           <MapView
             style={styles.map}
             initialRegion={{
-              latitude: location.lat,
-              longitude: location.lng,
+              latitude: effectiveLocation.lat,
+              longitude: effectiveLocation.lng,
               latitudeDelta: 0.08,
               longitudeDelta: 0.08,
             }}
@@ -159,7 +236,7 @@ export default function MasjidsTab() {
             showsMyLocationButton={Platform.OS === 'android'}
           >
             <Marker
-              coordinate={{ latitude: location.lat, longitude: location.lng }}
+              coordinate={{ latitude: effectiveLocation.lat, longitude: effectiveLocation.lng }}
               title="You"
               pinColor={Colors[colorScheme].primary}
             />
@@ -175,7 +252,7 @@ export default function MasjidsTab() {
           </MapView>
         )}
         {/* No masjids found label */}
-        {location && !loading && !errorMsg && filteredMasjids.length === 0 && (
+        {effectiveLocation && !loading && !errorMsg && filteredMasjids.length === 0 && (
           <View style={{ alignItems: 'center', marginVertical: 16 }}>
             <ThemedText style={{ color: Colors[colorScheme].warning, fontWeight: 'bold' }}>
               No masjids found within {maxDistance} km.
