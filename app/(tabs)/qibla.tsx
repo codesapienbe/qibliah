@@ -1,3 +1,5 @@
+import React from 'react';
+
 import KaabaIcon from '@/components/KaabaIcon';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
@@ -8,7 +10,6 @@ import { useQiblaDirection } from '@/hooks/useQiblaDirection';
 import { calculateQibla, haversineDistance } from '@/utils/qibla';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
-import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';

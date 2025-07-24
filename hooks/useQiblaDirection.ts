@@ -1,43 +1,30 @@
 import { logError } from '@/utils/logger';
+import { Magnetometer } from 'expo-sensors';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import CompassHeading from 'react-native-compass-heading';
+
+function calculateHeading(magnetometer: { x: number; y: number; z: number }) {
+  let { x, y } = magnetometer;
+  let angle = Math.atan2(y, x) * (180 / Math.PI);
+  angle = angle >= 0 ? angle : angle + 360;
+  return angle;
+}
 
 export function useQiblaDirection() {
   const [heading, setHeading] = useState<number | null>(null);
-  const [accuracy, setAccuracy] = useState<number>(0);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const compassStarted = useRef(false);
+  const subscription = useRef<any>(null);
 
-  // Only requests permission (if needed)
-  const requestPermission = useCallback(async () => {
-    // On iOS/Android, compass permission is usually included with location, but you may want to check platform specifics here
-    // For now, just resolve true
-    try {
-      return true;
-    } catch (error) {
-      logError(error, 'useQiblaDirection: requestPermission');
-      return false;
-    }
-  }, []);
-
-  // Start listening to compass
   const startCompass = useCallback(() => {
-    if (compassStarted.current) return;
+    if (subscription.current) return;
     setLoading(true);
     setErrorMsg(null);
     try {
-      CompassHeading.start(3, ({ heading, accuracy }: { heading: number; accuracy: number }) => {
+      subscription.current = Magnetometer.addListener((data) => {
         setLoading(false);
-        if (accuracy > 0) {
-          setHeading(heading);
-          setAccuracy(accuracy);
-          setErrorMsg(null);
-        } else {
-          setErrorMsg('Poor compass accuracy. Please calibrate your device by moving it in a figure-8 pattern.');
-        }
+        setHeading(calculateHeading(data));
       });
-      compassStarted.current = true;
+      Magnetometer.setUpdateInterval(100); // 10 updates per second
     } catch (error: any) {
       logError(error, 'useQiblaDirection: startCompass');
       setLoading(false);
@@ -45,22 +32,21 @@ export function useQiblaDirection() {
     }
   }, []);
 
-  // Stop compass
   const stopCompass = useCallback(() => {
-    try {
-      CompassHeading.stop();
-      compassStarted.current = false;
-    } catch (error) {
-      // ignore
+    if (subscription.current) {
+      subscription.current.remove();
+      subscription.current = null;
     }
   }, []);
 
-  // Clean up on unmount
   useEffect(() => {
     return () => {
       stopCompass();
     };
   }, [stopCompass]);
 
-  return { heading, accuracy, errorMsg, loading, requestPermission, startCompass, stopCompass };
+  // No permission needed for Magnetometer, but keep API for compatibility
+  const requestPermission = useCallback(async () => true, []);
+
+  return { heading, errorMsg, loading, requestPermission, startCompass, stopCompass };
 }

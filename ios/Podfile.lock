@@ -1695,30 +1695,6 @@ PODS:
     - React-jsiexecutor
     - React-RCTFBReactNativeSpec
     - ReactCommon/turbomodule/core
-  - react-native-compass-heading (2.0.2):
-    - DoubleConversion
-    - glog
-    - hermes-engine
-    - RCT-Folly (= 2024.11.18.00)
-    - RCTRequired
-    - RCTTypeSafety
-    - React-Core
-    - React-debug
-    - React-Fabric
-    - React-featureflags
-    - React-graphics
-    - React-hermes
-    - React-ImageManager
-    - React-jsi
-    - React-NativeModulesApple
-    - React-RCTFabric
-    - React-renderercss
-    - React-rendererdebug
-    - React-utils
-    - ReactCodegen
-    - ReactCommon/turbomodule/bridging
-    - ReactCommon/turbomodule/core
-    - Yoga
   - react-native-maps (1.20.1):
     - React-Core
   - react-native-safe-area-context (5.4.0):
@@ -2528,7 +2504,6 @@ DEPENDENCIES:
   - React-logger (from `../node_modules/react-native/ReactCommon/logger`)
   - React-Mapbuffer (from `../node_modules/react-native/ReactCommon`)
   - React-microtasksnativemodule (from `../node_modules/react-native/ReactCommon/react/nativemodule/microtasks`)
-  - react-native-compass-heading (from `../node_modules/react-native-compass-heading`)
   - react-native-maps (from `../node_modules/react-native-maps`)
   - react-native-safe-area-context (from `../node_modules/react-native-safe-area-context`)
   - react-native-voice (from `../node_modules/react-native-voice`)
@@ -2727,8 +2702,6 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon"
   React-microtasksnativemodule:
     :path: "../node_modules/react-native/ReactCommon/react/nativemodule/microtasks"
-  react-native-compass-heading:
-    :path: "../node_modules/react-native-compass-heading"
   react-native-maps:
     :path: "../node_modules/react-native-maps"
   react-native-safe-area-context:
@@ -2889,7 +2862,6 @@ SPEC CHECKSUMS:
   React-logger: 85fa3509931497c72ccd2547fcc91e7299d8591e
   React-Mapbuffer: 96a2f2a176268581733be182fa6eebab1c0193be
   React-microtasksnativemodule: bda561d2648e1e52bd9e5a87f8889836bdbde2e2
-  react-native-compass-heading: f8f1196be202ea507275c52914a4ec3d5b764f98
   react-native-maps: 9febd31278b35cd21e4fad2cf6fa708993be5dab
   react-native-safe-area-context: 562163222d999b79a51577eda2ea8ad2c32b4d06
   react-native-voice: d5a15fad6cdf841cd9a12158c8e611de13d5e9e2
