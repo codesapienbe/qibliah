@@ -8,7 +8,9 @@ import { useVoiceInput } from '@/hooks/useVoiceInput';
 import { formatSurahAyatMessage } from '@/utils/formatSurahAyatMessage';
 import { deleteGroqToken, getGroqToken, saveGroqToken } from '@/utils/tokenStorage';
 import { Ionicons } from '@expo/vector-icons';
+import * as FileSystem from 'expo-file-system';
 import * as ImagePicker from 'expo-image-picker';
+import * as Sharing from 'expo-sharing';
 import * as Speech from 'expo-speech';
 import React, { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -207,16 +209,24 @@ export default function HomeScreen() {
     }, 100);
   };
 
-  const renderAvatar = (sender: string, aiText?: string) => {
+  // Export chat as markdown (user prompt + AI response)
+  const handleExport = async (userPrompt: string, aiResponse: string) => {
+    const md = `# Chat Report\n\n**User Prompt:**\n\n${userPrompt}\n\n**AI Response:**\n\n${aiResponse}\n`;
+    const fileUri = FileSystem.cacheDirectory + `chat-report-${Date.now()}.md`;
+    await FileSystem.writeAsStringAsync(fileUri, md, { encoding: FileSystem.EncodingType.UTF8 });
+    await Sharing.shareAsync(fileUri, { mimeType: 'text/markdown', dialogTitle: 'Share Chat Report' });
+  };
+
+  const renderAvatar = (sender: string, aiText?: string, userPrompt?: string) => {
     if (sender === 'ai') {
       return (
         <View style={{ alignItems: 'center' }}>
           <TouchableOpacity
-            onPress={() => aiText && handleSpeak(aiText)}
+            onPress={() => userPrompt && aiText && handleExport(userPrompt, aiText)}
             style={[
               styles.avatarCircle,
               {
-                marginBottom: 16, // doubled space (avatarCircle default margin is 4-8)
+                marginBottom: 16,
                 backgroundColor: Colors[colorScheme].surface,
                 borderColor: Colors[colorScheme].primary,
                 alignItems: 'center',
@@ -225,39 +235,81 @@ export default function HomeScreen() {
             ]}
             activeOpacity={0.7}
           >
-            <Ionicons name="volume-high-outline" size={22} color={Colors[colorScheme].primary} />
+            <Ionicons name="download-outline" size={22} color={Colors[colorScheme].icon} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => aiText && handleSpeak(aiText)}
+            style={[
+              styles.avatarCircle,
+              {
+                marginBottom: 16,
+                backgroundColor: Colors[colorScheme].surface,
+                borderColor: Colors[colorScheme].primary,
+                alignItems: 'center',
+                justifyContent: 'center',
+              },
+            ]}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="volume-high-outline" size={22} color={Colors[colorScheme].icon} />
           </TouchableOpacity>
           <View style={[styles.avatarCircle, { backgroundColor: Colors[colorScheme].surface, borderColor: Colors[colorScheme].primary }] }>
-            <Ionicons name="chatbubbles" size={22} color={Colors[colorScheme].primary} />
+            <Ionicons name="chatbubbles" size={22} color={Colors[colorScheme].icon} />
           </View>
         </View>
       );
     }
     return (
-      <View style={[styles.avatarCircle, { backgroundColor: '#10B981', borderColor: '#10B981' }] }>
-        <Ionicons name="person" size={22} color="#fff" />
+      <View style={[styles.avatarCircle, { backgroundColor: Colors[colorScheme].primary, borderColor: Colors[colorScheme].primary }] }>
+        <Ionicons name="person" size={22} color={Colors[colorScheme].icon} />
       </View>
     );
   };
 
-  const renderItem = ({ item }: any) => {
+  const renderItem = ({ item, index }: any) => {
     const isUser = item.sender === 'user';
+    let userPrompt = undefined;
+    if (!isUser && index > 0 && messages[index - 1]?.sender === 'user') {
+      userPrompt = messages[index - 1].text;
+    }
     return (
       <View style={[styles.messageRow, isUser ? styles.userRow : styles.aiRow]}>
-        {!isUser && renderAvatar('ai', item.text)}
+        {!isUser && renderAvatar('ai', item.text, userPrompt)}
         <ThemedView
           style={[
             styles.messageBubble,
             isUser
-              ? styles.userBubble
-              : styles.aiBubble,
+              ? [styles.userBubble, { backgroundColor: Colors[colorScheme].primary, borderColor: Colors[colorScheme].primary }]
+              : [styles.aiBubble, { backgroundColor: Colors[colorScheme].surface, borderColor: Colors[colorScheme].cardBorder }],
           ]}
         >
           {isUser ? (
-            <ThemedText style={{ color: isUser ? '#fff' : '#222' }}>{item.text}</ThemedText>
+            <ThemedText style={{ color: Colors[colorScheme].text }}>{item.text}</ThemedText>
           ) : (
             <Markdown
-              style={{ body: { color: '#222', fontSize: 16, lineHeight: 24 } }}
+              style={{
+                container: { backgroundColor: Colors[colorScheme].surface },
+                body: { color: Colors[colorScheme].text, fontSize: 16, lineHeight: 24 },
+                paragraph: { color: Colors[colorScheme].text },
+                heading1: { color: Colors[colorScheme].text },
+                heading2: { color: Colors[colorScheme].text },
+                heading3: { color: Colors[colorScheme].text },
+                heading4: { color: Colors[colorScheme].text },
+                heading5: { color: Colors[colorScheme].text },
+                heading6: { color: Colors[colorScheme].text },
+                link: { color: Colors[colorScheme].primary },
+                list_item: { color: Colors[colorScheme].text },
+                bullet_list: { color: Colors[colorScheme].text },
+                ordered_list: { color: Colors[colorScheme].text },
+                code_inline: { color: Colors[colorScheme].text, backgroundColor: Colors[colorScheme].surface },
+                code_block: { color: Colors[colorScheme].text, backgroundColor: Colors[colorScheme].surface },
+                fence: { color: Colors[colorScheme].text, backgroundColor: Colors[colorScheme].surface },
+                blockquote: { color: Colors[colorScheme].text, borderLeftColor: Colors[colorScheme].primary },
+                table: { color: Colors[colorScheme].text },
+                th: { color: Colors[colorScheme].text },
+                tr: { color: Colors[colorScheme].text },
+                td: { color: Colors[colorScheme].text },
+              }}
             >
               {formatSurahAyatMessage({ text: item.text, language: i18n.language, t })}
             </Markdown>
@@ -287,16 +339,16 @@ export default function HomeScreen() {
       {/* Remember Chat Modal */}
       {showRememberModal && (
         <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.4)', zIndex: 100, justifyContent: 'center', alignItems: 'center' }}>
-          <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 24, width: '80%', alignItems: 'center' }}>
+          <View style={{ backgroundColor: Colors[colorScheme].surface, borderRadius: 16, padding: 24, width: '80%', alignItems: 'center' }}>
             <ThemedText style={{ fontWeight: 'bold', fontSize: 18, marginBottom: 12, color: Colors[colorScheme].primary }}>{t('conversation_memory')}</ThemedText>
-            <ThemedText style={{ color: '#374151', fontSize: 15, textAlign: 'center', marginBottom: 16 }}>{t('memory_explanation')}</ThemedText>
+            <ThemedText style={{ color: Colors[colorScheme].text, fontSize: 15, textAlign: 'center', marginBottom: 16 }}>{t('memory_explanation')}</ThemedText>
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
               <ThemedText style={{ fontSize: 16, marginRight: 10, color: Colors[colorScheme].primary }}>{t('remember_chat')}</ThemedText>
               <Switch
                 value={pendingRemember}
                 onValueChange={setPendingRemember}
-                thumbColor={pendingRemember ? Colors[colorScheme].primary : '#ccc'}
-                trackColor={{ true: Colors[colorScheme].primary, false: '#ccc' }}
+                thumbColor={pendingRemember ? Colors[colorScheme].primary : Colors[colorScheme].cardBorder}
+                trackColor={{ true: Colors[colorScheme].primary, false: Colors[colorScheme].cardBorder }}
               />
             </View>
             <View style={{ flexDirection: 'row', gap: 12 }}>
@@ -304,13 +356,13 @@ export default function HomeScreen() {
                 style={{ backgroundColor: Colors[colorScheme].primary, borderRadius: 8, paddingVertical: 8, paddingHorizontal: 18 }}
                 onPress={() => { setRememberChat(pendingRemember); setShowRememberModal(false); }}
               >
-                <ThemedText style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>{t('save')}</ThemedText>
+                <ThemedText style={{ color: Colors[colorScheme].icon, fontWeight: 'bold', fontSize: 16 }}>{t('save')}</ThemedText>
               </TouchableOpacity>
               <TouchableOpacity
-                style={{ backgroundColor: '#eee', borderRadius: 8, paddingVertical: 8, paddingHorizontal: 18 }}
+                style={{ backgroundColor: Colors[colorScheme].surface, borderRadius: 8, paddingVertical: 8, paddingHorizontal: 18 }}
                 onPress={() => setShowRememberModal(false)}
               >
-                <ThemedText style={{ color: Colors[colorScheme].primary, fontWeight: 'bold', fontSize: 16 }}>{t('cancel')}</ThemedText>
+                <ThemedText style={{ color: Colors[colorScheme].icon, fontWeight: 'bold', fontSize: 16 }}>{t('cancel')}</ThemedText>
               </TouchableOpacity>
             </View>
           </View>
@@ -319,11 +371,12 @@ export default function HomeScreen() {
       {/* API Key Prompt Modal */}
       {showApiKeyPrompt && (
         <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.4)', zIndex: 100, justifyContent: 'center', alignItems: 'center' }}>
-          <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 24, width: '80%', alignItems: 'center' }}>
+          <View style={{ backgroundColor: Colors[colorScheme].surface, borderRadius: 16, padding: 24, width: '80%', alignItems: 'center' }}>
             <ThemedText style={{ fontWeight: 'bold', fontSize: 18, marginBottom: 12, color: Colors[colorScheme].primary }}>{t('enter_groq_api_key')}</ThemedText>
             <TextInput
-              style={{ borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 10, width: '100%', marginBottom: 16, fontSize: 16 }}
+              style={{ borderWidth: 1, borderColor: Colors[colorScheme].cardBorder, borderRadius: 8, padding: 10, width: '100%', marginBottom: 16, fontSize: 16, color: Colors[colorScheme].text, backgroundColor: Colors[colorScheme].surface }}
               placeholder={t('api_key_placeholder')}
+              placeholderTextColor={Colors[colorScheme].text}
               value={showingMasked && groqApiKey ? '************' : tempApiKey}
               onChangeText={text => {
                 setTempApiKey(text);
@@ -352,21 +405,21 @@ export default function HomeScreen() {
                   setShowingMasked(true);
                 }}
               >
-                <ThemedText style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>{t('save')}</ThemedText>
+                <ThemedText style={{ color: Colors[colorScheme].icon, fontWeight: 'bold', fontSize: 16 }}>{t('save')}</ThemedText>
               </TouchableOpacity>
               <TouchableOpacity
-                style={{ backgroundColor: '#eee', borderRadius: 8, paddingVertical: 8, paddingHorizontal: 18 }}
+                style={{ backgroundColor: Colors[colorScheme].surface, borderRadius: 8, paddingVertical: 8, paddingHorizontal: 18 }}
                 onPress={() => {
                   setShowApiKeyPrompt(false);
                   setTempApiKey('');
                   setShowingMasked(true);
                 }}
               >
-                <ThemedText style={{ color: Colors[colorScheme].primary, fontWeight: 'bold', fontSize: 16 }}>{t('cancel')}</ThemedText>
+                <ThemedText style={{ color: Colors[colorScheme].icon, fontWeight: 'bold', fontSize: 16 }}>{t('cancel')}</ThemedText>
               </TouchableOpacity>
               {groqApiKey && (
                 <TouchableOpacity
-                  style={{ backgroundColor: '#f87171', borderRadius: 8, paddingVertical: 8, paddingHorizontal: 18 }}
+                  style={{ backgroundColor: Colors[colorScheme].error, borderRadius: 8, paddingVertical: 8, paddingHorizontal: 18 }}
                   onPress={async () => {
                     await deleteGroqToken();
                     setGroqApiKey(null);
@@ -375,7 +428,7 @@ export default function HomeScreen() {
                     setShowingMasked(true);
                   }}
                 >
-                  <ThemedText style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>{t('remove_api_key')}</ThemedText>
+                  <ThemedText style={{ color: Colors[colorScheme].icon, fontWeight: 'bold', fontSize: 16 }}>{t('remove_api_key')}</ThemedText>
                 </TouchableOpacity>
               )}
             </View>
@@ -403,24 +456,24 @@ export default function HomeScreen() {
               {renderAvatar('ai')}
               <ThemedView style={[styles.messageBubble, styles.aiBubble]}>
                 <View style={styles.loadingDotsContainer}>
-                  <View style={[styles.loadingDot, styles.loadingDot1]} />
-                  <View style={[styles.loadingDot, styles.loadingDot2]} />
-                  <View style={[styles.loadingDot, styles.loadingDot3]} />
+                  <View style={[styles.loadingDot, styles.loadingDot1, { backgroundColor: Colors[colorScheme].primary }]} />
+                  <View style={[styles.loadingDot, styles.loadingDot2, { backgroundColor: Colors[colorScheme].primary }]} />
+                  <View style={[styles.loadingDot, styles.loadingDot3, { backgroundColor: Colors[colorScheme].primary }]} />
                 </View>
               </ThemedView>
             </View>
           ) : null}
         />
-        <View style={[styles.inputBarWrapper, { paddingBottom: insets.bottom + 20 }]}>
-          <View style={styles.inputBar}>
-            <TouchableOpacity style={styles.plusButton} onPress={handlePickFile}>
-              <Ionicons name="add" size={26} color="#2563eb" />
+        <View style={[styles.inputBarWrapper, { paddingBottom: insets.bottom + 20, backgroundColor: Colors[colorScheme].surface, borderTopColor: Colors[colorScheme].cardBorder }]}>
+          <View style={[styles.inputBar, { backgroundColor: Colors[colorScheme].surface, shadowColor: Colors[colorScheme].primary }] }>
+            <TouchableOpacity style={[styles.plusButton, { backgroundColor: Colors[colorScheme].surface }]} onPress={handlePickFile}>
+              <Ionicons name="add" size={26} color={Colors[colorScheme].primary} />
             </TouchableOpacity>
-            <View style={styles.textInputWrapper}>
+            <View style={[styles.textInputWrapper, { backgroundColor: Colors[colorScheme].surface, borderColor: Colors[colorScheme].cardBorder }]}>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { color: Colors[colorScheme].text, backgroundColor: 'transparent' }]}
                 placeholder={t('type_message_placeholder')}
-                placeholderTextColor="#aaa"
+                placeholderTextColor={Colors[colorScheme].text}
                 value={input}
                 onChangeText={setInput}
                 onSubmitEditing={handleSend}
@@ -431,22 +484,22 @@ export default function HomeScreen() {
                 numberOfLines={3}
               />
               {listening && (
-                <ThemedText style={{ color: '#2563eb', fontSize: 13, marginTop: 2 }}>
+                <ThemedText style={{ color: Colors[colorScheme].primary, fontSize: 13, marginTop: 2 }}>
                   {partial ? `"${partial}"` : t('listening')}
                 </ThemedText>
               )}
             </View>
-            <TouchableOpacity style={styles.micButton} onPress={handleVoiceInput}>
-              <Ionicons name={listening ? "mic-circle" : "mic"} size={22} color={listening ? "#2563eb" : "#10B981"} />
-              {listening && <ThemedText style={{ color: '#2563eb', fontSize: 12, marginLeft: 4 }}>●</ThemedText>}
+            <TouchableOpacity style={[styles.micButton, { backgroundColor: Colors[colorScheme].surface }]} onPress={handleVoiceInput}>
+              <Ionicons name={listening ? "mic-circle" : "mic"} size={22} color={listening ? Colors[colorScheme].primary : Colors[colorScheme].secondary} />
+              {listening && <ThemedText style={{ color: Colors[colorScheme].primary, fontSize: 12, marginLeft: 4 }}>●</ThemedText>}
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.sendButton, { backgroundColor: input.trim() && !sending ? '#10B981' : '#ccc' }]}
+              style={[styles.sendButton, { backgroundColor: input.trim() && !sending ? Colors[colorScheme].primary : Colors[colorScheme].cardBorder }]}
               onPress={handleSend}
               disabled={!input.trim() || sending}
               activeOpacity={0.8}
             >
-              <Ionicons name="send" size={20} color="#fff" />
+              <Ionicons name="send" size={20} color={Colors[colorScheme].icon} />
             </TouchableOpacity>
           </View>
         </View>
@@ -512,13 +565,9 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   userBubble: {
-    backgroundColor: '#10B981',
-    borderColor: '#10B981',
     alignSelf: 'flex-end',
   },
   aiBubble: {
-    backgroundColor: '#f3f4f6',
-    borderColor: '#ececec',
     alignSelf: 'flex-start',
   },
   avatarCircle: {

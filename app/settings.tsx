@@ -67,38 +67,48 @@ export default function SettingsScreen() {
       <ThemedText type="title" style={{ fontWeight: 'bold', fontSize: 28, color: Colors[colorScheme].primary, marginBottom: 24 }}>{t('settings')}</ThemedText>
       {/* Language Picker */}
       <View style={styles.row}>
-        <ThemedText style={styles.label}>{t('language')}</ThemedText>
+        <ThemedText style={[styles.label, { color: Colors[colorScheme].primary }]}>{t('language')}</ThemedText>
         <View style={styles.pickerRow}>
           {LANGUAGES.map(l => (
             <TouchableOpacity
               key={l.code}
-              style={[styles.pickerBtn, language === l.code && styles.pickerBtnActive]}
+              style={[
+                styles.pickerBtn,
+                language === l.code
+                  ? [styles.pickerBtnActive, { backgroundColor: Colors[colorScheme].primary, borderColor: Colors[colorScheme].primary }]
+                  : { backgroundColor: Colors[colorScheme].surface, borderColor: Colors[colorScheme].primary },
+              ]}
               onPress={() => setLanguage(l.code)}
             >
-              <ThemedText style={{ color: language === l.code ? '#fff' : Colors[colorScheme].primary }}>{t(l.label)}</ThemedText>
+              <ThemedText style={{ color: language === l.code ? Colors[colorScheme].icon : Colors[colorScheme].primary }}>{t(l.label)}</ThemedText>
             </TouchableOpacity>
           ))}
         </View>
       </View>
       {/* Theme Picker */}
       <View style={styles.row}>
-        <ThemedText style={styles.label}>{t('theme')}</ThemedText>
+        <ThemedText style={[styles.label, { color: Colors[colorScheme].primary }]}>{t('theme')}</ThemedText>
         <View style={styles.pickerRow}>
           {THEMES.map(ti => (
             <TouchableOpacity
               key={ti.code}
-              style={[styles.pickerBtn, theme === ti.code && styles.pickerBtnActive]}
+              style={[
+                styles.pickerBtn,
+                theme === ti.code
+                  ? [styles.pickerBtnActive, { backgroundColor: Colors[colorScheme].primary, borderColor: Colors[colorScheme].primary }]
+                  : { backgroundColor: Colors[colorScheme].surface, borderColor: Colors[colorScheme].primary },
+              ]}
               onPress={() => setTheme(ti.code as 'system' | 'light' | 'dark')}
             >
-              <ThemedText style={{ color: theme === ti.code ? '#fff' : Colors[colorScheme].primary }}>{t(ti.label)}</ThemedText>
+              <ThemedText style={{ color: theme === ti.code ? Colors[colorScheme].icon : Colors[colorScheme].primary }}>{t(ti.label)}</ThemedText>
             </TouchableOpacity>
           ))}
         </View>
       </View>
       {/* Groq API Key */}
       <View style={styles.row}>
-        <ThemedText style={styles.label}>{t('groq_api_key')}</ThemedText>
-        <TouchableOpacity style={styles.apiKeyBtn} onPress={() => setShowApiKeyModal(true)}>
+        <ThemedText style={[styles.label, { color: Colors[colorScheme].primary }]}>{t('groq_api_key')}</ThemedText>
+        <TouchableOpacity style={[styles.apiKeyBtn, { backgroundColor: Colors[colorScheme].surface, borderColor: Colors[colorScheme].primary }]} onPress={() => setShowApiKeyModal(true)}>
           <ThemedText style={{ color: Colors[colorScheme].primary, fontWeight: 'bold' }}>{groqApiKey ? '************' : t('set_api_key')}</ThemedText>
           <Ionicons name="chevron-forward" size={20} color={Colors[colorScheme].primary} />
         </TouchableOpacity>
@@ -109,7 +119,7 @@ export default function SettingsScreen() {
           <View style={[styles.modalContent, { backgroundColor: Colors[colorScheme].surface }]}> 
             <ThemedText style={{ fontWeight: 'bold', fontSize: 18, marginBottom: 12, color: Colors[colorScheme].primary }}>{t('enter_groq_api_key')}</ThemedText>
             <TextInput
-              style={{ borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 10, width: '100%', marginBottom: 16, fontSize: 16, color: Colors[colorScheme].text }}
+              style={{ borderWidth: 1, borderColor: Colors[colorScheme].cardBorder, borderRadius: 8, padding: 10, width: '100%', marginBottom: 16, fontSize: 16, color: Colors[colorScheme].text, backgroundColor: Colors[colorScheme].surface }}
               placeholder={t('api_key_placeholder')}
               value={showingMasked && groqApiKey ? '************' : tempApiKey}
               onChangeText={text => {
@@ -139,21 +149,21 @@ export default function SettingsScreen() {
                   setShowingMasked(true);
                 }}
               >
-                <ThemedText style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>{t('save')}</ThemedText>
+                <ThemedText style={{ color: Colors[colorScheme].icon, fontWeight: 'bold', fontSize: 16 }}>{t('save')}</ThemedText>
               </TouchableOpacity>
               <TouchableOpacity
-                style={{ backgroundColor: '#eee', borderRadius: 8, paddingVertical: 8, paddingHorizontal: 18 }}
+                style={{ backgroundColor: Colors[colorScheme].surface, borderRadius: 8, paddingVertical: 8, paddingHorizontal: 18 }}
                 onPress={() => {
                   setShowApiKeyModal(false);
                   setTempApiKey(groqApiKey ? '************' : '');
                   setShowingMasked(true);
                 }}
               >
-                <ThemedText style={{ color: Colors[colorScheme].primary, fontWeight: 'bold', fontSize: 16 }}>{t('cancel')}</ThemedText>
+                <ThemedText style={{ color: Colors[colorScheme].icon, fontWeight: 'bold', fontSize: 16 }}>{t('cancel')}</ThemedText>
               </TouchableOpacity>
               {groqApiKey && (
                 <TouchableOpacity
-                  style={{ backgroundColor: '#f87171', borderRadius: 8, paddingVertical: 8, paddingHorizontal: 18 }}
+                  style={{ backgroundColor: Colors[colorScheme].error, borderRadius: 8, paddingVertical: 8, paddingHorizontal: 18 }}
                   onPress={async () => {
                     await deleteGroqToken();
                     setGroqApiKey(null);
@@ -162,7 +172,7 @@ export default function SettingsScreen() {
                     setShowingMasked(true);
                   }}
                 >
-                  <ThemedText style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>{t('remove_api_key')}</ThemedText>
+                  <ThemedText style={{ color: Colors[colorScheme].icon, fontWeight: 'bold', fontSize: 16 }}>{t('remove_api_key')}</ThemedText>
                 </TouchableOpacity>
               )}
             </View>
@@ -181,7 +191,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
     marginBottom: 8,
-    color: '#059669',
   },
   pickerRow: {
     flexDirection: 'row',
@@ -189,26 +198,20 @@ const styles = StyleSheet.create({
   },
   pickerBtn: {
     borderWidth: 1,
-    borderColor: '#059669',
     borderRadius: 8,
     paddingVertical: 8,
     paddingHorizontal: 16,
     marginRight: 8,
-    backgroundColor: '#fff',
   },
   pickerBtnActive: {
-    backgroundColor: '#059669',
-    borderColor: '#059669',
   },
   apiKeyBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#059669',
     borderRadius: 8,
     paddingVertical: 8,
     paddingHorizontal: 16,
-    backgroundColor: '#fff',
     marginLeft: 8,
   },
   modalOverlay: {

@@ -9,6 +9,7 @@ import 'react-native-reanimated';
 import i18n from '../utils/i18n';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
+import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -60,7 +61,7 @@ export default function RootLayout() {
                       name="settings-outline"
                       size={26}
                       style={{ marginRight: 18 }}
-                      color={colorScheme === 'dark' ? '#fff' : '#222'}
+                      color={Colors[colorScheme ?? 'light'].icon}
                       onPress={() => router.push('/settings')}
                     />
                   ),

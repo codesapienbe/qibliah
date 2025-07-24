@@ -44,25 +44,25 @@ export const Colors = {
     icon: '#687076',
   },
   dark: {
-    text: '#F5F5F5', // --color-text (dark)
-    background: '#1F2121', // --color-background (dark)
-    surface: '#262828', // --color-surface (dark)
-    tint: '#32B8C6', // --color-primary (dark)
-    primary: '#32B8C6', // --color-primary (dark)
-    primaryDark: '#21808D', // --color-primary-active (dark)
-    secondary: '#F59E0B', // --islamic-secondary
-    accent: '#92400E', // --islamic-accent
-    emerald: '#047857', // --islamic-emerald
-    teal: '#0F766E', // --islamic-teal
-    deepGreen: '#134E4A', // --islamic-deep-green
-    error: '#FF5459', // --color-error (dark)
-    success: '#32B8C6', // --color-success (dark)
-    warning: '#E68161', // --color-warning (dark)
-    info: '#A7A9A9', // --color-info (dark)
-    cardBorder: '#777C7C', // --color-card-border (dark)
-    cardBorderInner: '#777C7C', // --color-card-border-inner (dark)
-    tabIconDefault: '#9BA1A6',
-    tabIconSelected: '#32B8C6',
-    icon: '#9BA1A6',
+    text: '#F5F5F5', // white-ish for all text
+    background: '#101613', // deep dark green background
+    surface: '#18221B', // slightly lighter deep green
+    tint: '#134E4A', // deep green as main accent
+    primary: '#134E4A', // deep green
+    primaryDark: '#0F766E', // even deeper green
+    secondary: '#F59E0B', // dark orange
+    accent: '#92400E', // deep orange accent
+    emerald: '#047857',
+    teal: '#0F766E',
+    deepGreen: '#134E4A',
+    error: '#FF5459',
+    success: '#10B981',
+    warning: '#F59E0B',
+    info: '#A7A9A9',
+    cardBorder: '#2C3A2E',
+    cardBorderInner: '#2C3A2E',
+    tabIconDefault: '#F5F5F5', // white-ish icons
+    tabIconSelected: '#F5F5F5', // white-ish for selected
+    icon: '#F5F5F5', // all icons close to white
   },
 };

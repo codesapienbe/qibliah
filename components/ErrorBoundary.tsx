@@ -1,6 +1,10 @@
+import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
+import { Colors } from '@/constants/Colors';
+import { useColorScheme } from '@/hooks/useColorScheme';
 import { logError } from '@/utils/logger';
 import React from 'react';
-import { Button, Text, View } from 'react-native';
+import { Button } from 'react-native';
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;
@@ -33,15 +37,16 @@ export default class ErrorBoundary extends React.Component<ErrorBoundaryProps, E
 
   render() {
     if (this.state.hasError) {
+      const colorScheme = useColorScheme?.() ?? 'light';
       return (
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
-          <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 12 }}>Something went wrong</Text>
-          <Text style={{ color: 'red', marginBottom: 8 }}>{this.state.error?.message}</Text>
-          <Text style={{ fontSize: 12, color: '#888', marginBottom: 16 }}>
+        <ThemedView style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24, backgroundColor: Colors[colorScheme].background }}>
+          <ThemedText style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 12, color: Colors[colorScheme].primary }}>Something went wrong</ThemedText>
+          <ThemedText style={{ color: Colors[colorScheme].error, marginBottom: 8 }}>{this.state.error?.message}</ThemedText>
+          <ThemedText style={{ fontSize: 12, color: Colors[colorScheme].text, marginBottom: 16 }}>
             {this.state.errorInfo?.componentStack}
-          </Text>
-          <Button title="Try Again" onPress={this.handleReset} />
-        </View>
+          </ThemedText>
+          <Button title="Try Again" onPress={this.handleReset} color={Colors[colorScheme].primary} />
+        </ThemedView>
       );
     }
     return this.props.children;

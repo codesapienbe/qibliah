@@ -57,7 +57,8 @@
     "react-native-voice": "^0.3.0",
     "react-native-web": "~0.20.0",
     "react-native-webview": "13.13.5",
-    "react-native-markdown-display": "^7.0.0"
+    "react-native-markdown-display": "^7.0.0",
+    "expo-sharing": "~13.1.5"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

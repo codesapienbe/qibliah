@@ -34,25 +34,25 @@ export default function PrayerTab() {
           <ThemedText style={{ color: Colors[colorScheme].secondary, fontWeight: 'bold', fontSize: 18 }}>{nextPrayer.name}</ThemedText>
           <ThemedText style={{ color: Colors[colorScheme].primary, fontWeight: 'bold', fontSize: 18 }}>{nextPrayer.time}</ThemedText>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
-            <ThemedText style={{ fontSize: 24, fontWeight: 'bold', color: '#222', fontFamily: 'monospace' }}>{String(countdown.hours).padStart(2, '0')}</ThemedText>
+            <ThemedText style={{ fontSize: 24, fontWeight: 'bold', color: Colors[colorScheme].text, fontFamily: 'monospace' }}>{String(countdown.hours).padStart(2, '0')}</ThemedText>
             <ThemedText style={{ fontSize: 28, fontWeight: 'bold', color: Colors[colorScheme].secondary, marginHorizontal: 2 }}>:</ThemedText>
-            <ThemedText style={{ fontSize: 24, fontWeight: 'bold', color: '#222', fontFamily: 'monospace' }}>{String(countdown.minutes).padStart(2, '0')}</ThemedText>
+            <ThemedText style={{ fontSize: 24, fontWeight: 'bold', color: Colors[colorScheme].text, fontFamily: 'monospace' }}>{String(countdown.minutes).padStart(2, '0')}</ThemedText>
             <ThemedText style={{ fontSize: 28, fontWeight: 'bold', color: Colors[colorScheme].secondary, marginHorizontal: 2 }}>:</ThemedText>
-            <ThemedText style={{ fontSize: 24, fontWeight: 'bold', color: '#222', fontFamily: 'monospace' }}>{String(countdown.seconds).padStart(2, '0')}</ThemedText>
+            <ThemedText style={{ fontSize: 24, fontWeight: 'bold', color: Colors[colorScheme].text, fontFamily: 'monospace' }}>{String(countdown.seconds).padStart(2, '0')}</ThemedText>
           </View>
         </View>
         {/* Prayer Times Table (placeholder) */}
-        <View style={{ marginHorizontal: 16, marginTop: 8, padding: 14, backgroundColor: '#d1fae5', borderRadius: 14 }}>
+        <View style={{ marginHorizontal: 16, marginTop: 8, padding: 14, backgroundColor: Colors[colorScheme].surface, borderRadius: 14 }}>
           <ThemedText style={{ color: Colors[colorScheme].primary, fontWeight: 'bold', fontSize: 16, marginBottom: 4 }}>{t('todays_prayer_times')}</ThemedText>
           {/* ...prayer times grid/table here... */}
         </View>
         {/* Reminders (placeholder) */}
-        <View style={{ marginHorizontal: 16, marginTop: 16, padding: 14, backgroundColor: '#fff', borderRadius: 14 }}>
+        <View style={{ marginHorizontal: 16, marginTop: 16, padding: 14, backgroundColor: Colors[colorScheme].surface, borderRadius: 14 }}>
           <ThemedText style={{ color: Colors[colorScheme].primary, fontWeight: 'bold', fontSize: 16, marginBottom: 4 }}>{t('reminders')}</ThemedText>
           {/* ...reminders toggle list here... */}
         </View>
         {/* Stats (placeholder) */}
-        <View style={{ marginHorizontal: 16, marginTop: 16, padding: 14, backgroundColor: '#f3f4f6', borderRadius: 14 }}>
+        <View style={{ marginHorizontal: 16, marginTop: 16, padding: 14, backgroundColor: Colors[colorScheme].surface, borderRadius: 14 }}>
           <ThemedText style={{ color: Colors[colorScheme].primary, fontWeight: 'bold', fontSize: 16, marginBottom: 4 }}>{t('stats')}</ThemedText>
           {/* ...stats here... */}
         </View>

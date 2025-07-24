@@ -139,10 +139,10 @@ export default function CalendarTab() {
       {/* Month Info (no background) */}
       <View style={{ alignItems: 'center', marginBottom: 8 }}>
         <ThemedText style={{ fontSize: 22, fontWeight: 'bold', color: Colors[colorScheme].primary }}>{getIslamicMonthName(month, t)} {year}</ThemedText>
-        <ThemedText style={{ color: '#059669', fontSize: 14 }}>{t(MONTHS[month])} {year}</ThemedText>
+        <ThemedText style={{ color: Colors[colorScheme].secondary, fontSize: 14 }}>{t(MONTHS[month])} {year}</ThemedText>
         <TouchableOpacity
           onPress={goToToday}
-          style={{ marginTop: 6, paddingVertical: 7, paddingHorizontal: 18, backgroundColor: 'rgba(16,185,129,0.08)', borderRadius: 12, alignItems: 'center' }}
+          style={{ marginTop: 6, paddingVertical: 7, paddingHorizontal: 18, backgroundColor: Colors[colorScheme].surface, borderRadius: 12, alignItems: 'center' }}
         >
           <ThemedText style={{ color: Colors[colorScheme].primary, fontWeight: '600', fontSize: 16 }}>{t('today')}</ThemedText>
         </TouchableOpacity>
@@ -150,10 +150,10 @@ export default function CalendarTab() {
       <ScrollView contentContainerStyle={{ flexGrow: 1, backgroundColor: Colors[colorScheme].background }}>
         <View style={{ flex: 1, paddingHorizontal: 0, paddingTop: 0 }}>
           {/* Weekday Headers */}
-          <View style={{ flexDirection: 'row', backgroundColor: '#d1fae5', paddingVertical: 10, borderRadius: 12, marginHorizontal: 16, marginBottom: 2 }}>
+          <View style={{ flexDirection: 'row', backgroundColor: Colors[colorScheme].surface, paddingVertical: 10, borderRadius: 12, marginHorizontal: 16, marginBottom: 2 }}>
             {WEEKDAYS.map((day) => (
               <View key={day} style={{ flex: 1, alignItems: 'center' }}>
-                <ThemedText style={{ color: '#065f46', fontWeight: 'bold', fontSize: 13, letterSpacing: 1 }}>{t(day)}</ThemedText>
+                <ThemedText style={{ color: Colors[colorScheme].primary, fontWeight: 'bold', fontSize: 13, letterSpacing: 1 }}>{t(day)}</ThemedText>
               </View>
             ))}
           </View>
@@ -176,24 +176,24 @@ export default function CalendarTab() {
                     marginBottom: 2,
                     backgroundColor:
                       day === null ? 'transparent'
-                      : selected ? '#059669'
-                      : todayCell ? '#d1fae5'
+                      : selected ? Colors[colorScheme].primary
+                      : todayCell ? Colors[colorScheme].surface
                       : 'transparent',
-                    shadowColor: selected ? '#059669' : undefined,
+                    shadowColor: selected ? Colors[colorScheme].primary : undefined,
                     shadowOpacity: selected ? 0.2 : 0,
                     shadowRadius: selected ? 8 : 0,
                     elevation: selected ? 2 : 0,
                     borderWidth: todayCell && !selected ? 1 : 0,
-                    borderColor: todayCell && !selected ? '#059669' : 'transparent',
+                    borderColor: todayCell && !selected ? Colors[colorScheme].primary : 'transparent',
                     transform: selected ? [{ scale: 1.08 }] : undefined,
                   }}
                   activeOpacity={day !== null ? 0.7 : 1}
                 >
                   <ThemedText style={{
                     color: day === null ? 'transparent'
-                      : selected ? '#fff'
-                      : todayCell ? '#059669'
-                      : '#374151',
+                      : selected ? Colors[colorScheme].icon
+                      : todayCell ? Colors[colorScheme].primary
+                      : Colors[colorScheme].text,
                     fontWeight: selected || todayCell ? 'bold' : '500',
                     fontSize: 16,
                   }}>{day}</ThemedText>
@@ -202,9 +202,9 @@ export default function CalendarTab() {
             })}
           </View>
           {/* Word of the Day */}
-          <View style={{ marginHorizontal: 16, marginTop: 12, padding: 14, backgroundColor: '#f3f4f6', borderRadius: 14, alignItems: 'center' }}>
+          <View style={{ marginHorizontal: 16, marginTop: 12, padding: 14, backgroundColor: Colors[colorScheme].surface, borderRadius: 14, alignItems: 'center' }}>
             <ThemedText style={{ color: Colors[colorScheme].primary, fontWeight: 'bold', fontSize: 16, marginBottom: 4 }}>{t('word_of_the_day')}</ThemedText>
-            <ThemedText style={{ color: '#374151', fontSize: 15, textAlign: 'center' }} numberOfLines={3}>
+            <ThemedText style={{ color: Colors[colorScheme].text, fontSize: 15, textAlign: 'center' }} numberOfLines={3}>
               {t('word_of_the_day_quote')}
             </ThemedText>
           </View>
@@ -246,7 +246,6 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   headerCell: {
-    color: '#F59E0B',
     fontWeight: 'bold',
     fontSize: 14,
     backgroundColor: 'transparent',
@@ -263,30 +262,22 @@ const styles = StyleSheet.create({
   otherMonthText: {
     color: '#bbb',
   },
-  todayCell: {
-    backgroundColor: '#10B981',
-  },
+  todayCell: {},
   todayText: {
-    color: '#fff',
     fontWeight: 'bold',
   },
   selectedCell: {
-    backgroundColor: '#059669',
     borderWidth: 2,
-    borderColor: '#F59E0B',
   },
   selectedText: {
-    color: '#fff',
     fontWeight: 'bold',
   },
   dayText: {
     fontSize: 16,
   },
   card: {
-    backgroundColor: '#fff',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#eee',
     padding: 16,
     marginBottom: 8,
     shadowColor: '#000',
@@ -307,23 +298,19 @@ const styles = StyleSheet.create({
   },
   prayerCell: {
     flexBasis: '48%',
-    backgroundColor: '#fff',
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#eee',
     padding: 16,
     alignItems: 'center',
     marginBottom: 8,
     position: 'relative',
   },
   prayerName: {
-    color: '#888',
     fontSize: 16,
     fontWeight: '500',
     marginBottom: 4,
   },
   prayerTime: {
-    color: '#222',
     fontSize: 22,
     fontWeight: 'bold',
     fontFamily: 'monospace',
@@ -335,7 +322,6 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   countdownItem: {
-    backgroundColor: '#f3f3f3',
     borderRadius: 12,
     paddingVertical: 10,
     paddingHorizontal: 12,
@@ -345,19 +331,16 @@ const styles = StyleSheet.create({
   countdownValue: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#222',
     fontFamily: 'monospace',
   },
   countdownLabel: {
     fontSize: 10,
-    color: '#888',
     fontWeight: '600',
     marginTop: 2,
   },
   countdownSeparator: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#F59E0B',
     marginHorizontal: 2,
   },
   reminderRow: {
@@ -368,7 +351,6 @@ const styles = StyleSheet.create({
   },
   reminderSeparator: {
     height: 1,
-    backgroundColor: '#f3f3f3',
     marginVertical: 2,
   },
 }); 

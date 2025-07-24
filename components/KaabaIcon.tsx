@@ -1,8 +1,12 @@
+import { Colors } from '@/constants/Colors';
+import { useColorScheme } from '@/hooks/useColorScheme';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import Svg, { Path, Polygon, Rect } from 'react-native-svg';
 
-const KaabaIcon = ({ size = 100, color = "#8B4513" }) => {
+const KaabaIcon = ({ size = 100, color }: { size?: number; color?: string }) => {
+  const colorScheme = useColorScheme?.() ?? 'light';
+  const mainColor = color || Colors[colorScheme].icon;
   return (
     <View style={styles.container}>
       <Svg width={size} height={size * 1.2} viewBox="0 0 100 120">
@@ -12,7 +16,7 @@ const KaabaIcon = ({ size = 100, color = "#8B4513" }) => {
           y="30"
           width="50"
           height="70"
-          fill={color}
+          fill={mainColor}
           stroke="#5D4037"
           strokeWidth="2"
         />
@@ -29,7 +33,7 @@ const KaabaIcon = ({ size = 100, color = "#8B4513" }) => {
         {/* Kaaba Top (Pyramid shape) */}
         <Polygon
           points="25,30 50,10 75,30"
-          fill={color}
+          fill={mainColor}
           stroke="#5D4037"
           strokeWidth="2"
         />

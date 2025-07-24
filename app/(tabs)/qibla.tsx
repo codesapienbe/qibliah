@@ -166,7 +166,7 @@ export default function QiblaTab() {
             }}
             accessibilityLabel={t('qibla_submit_manual_location')}
           >
-            <Ionicons name="checkmark-circle" size={28} color="#fff" />
+            <Ionicons name="checkmark-circle" size={28} color={Colors[colorScheme].icon} />
           </TouchableOpacity>
           <Text style={{ color: Colors[colorScheme].text, marginTop: 20, textAlign: 'center', fontSize: 13 }}>
             {t('qibla_location_permission_info')}
@@ -197,7 +197,7 @@ export default function QiblaTab() {
                 >
                   {/* Compass Markings */}
                   <View style={styles.compassMarkings}>
-                    <ThemedText style={[styles.compassMark, styles.north, { color: '#ff4444' }]}>{t('north_short')}</ThemedText>
+                    <ThemedText style={[styles.compassMark, styles.north, { color: Colors[colorScheme].primary }]}>{t('north_short')}</ThemedText>
                     <ThemedText style={[styles.compassMark, styles.east, { color: Colors[colorScheme].text }]}>{t('east_short')}</ThemedText>
                     <ThemedText style={[styles.compassMark, styles.south, { color: Colors[colorScheme].text }]}>{t('south_short')}</ThemedText>
                     <ThemedText style={[styles.compassMark, styles.west, { color: Colors[colorScheme].text }]}>{t('west_short')}</ThemedText>
@@ -222,7 +222,7 @@ export default function QiblaTab() {
                         }
                       ]}
                     >
-                      <View style={isNearQibla ? styles.kaabaIconHighlight : undefined}>
+                      <View style={isNearQibla ? [styles.kaabaIconHighlight, { shadowColor: Colors[colorScheme].primary }] : undefined}>
                         <KaabaIcon size={kaabaIconSize} />
                       </View>
                     </View>
@@ -231,7 +231,7 @@ export default function QiblaTab() {
                 
                 {/* Static needle pointing up (shows device heading) */}
                 <View style={[styles.staticNeedle, { 
-                  backgroundColor: isNearQibla ? '#10B981' : '#F59E0B' 
+                  backgroundColor: isNearQibla ? Colors[colorScheme].primary : Colors[colorScheme].secondary
                 }]} />
 
                 {/* Error/loading overlay */}
@@ -261,13 +261,13 @@ export default function QiblaTab() {
                   <>
                     <ThemedText style={[
                       styles.directionValue, 
-                      { color: isNearQibla ? '#10B981' : '#F59E0B' }
+                      { color: isNearQibla ? Colors[colorScheme].primary : Colors[colorScheme].secondary }
                     ]}>
                       <Text>{qiblaDegrees !== null ? qiblaDegrees : ''}</Text>
                       <Text style={{fontSize: 32}}>°</Text>
                     </ThemedText>
                     {isNearQibla && (
-                      <ThemedText style={[styles.alignedText, { color: '#10B981' }]}>
+                      <ThemedText style={[styles.alignedText, { color: Colors[colorScheme].primary }]}>
                         {t('qibla_facing_qibla')}
                       </ThemedText>
                     )}
@@ -306,7 +306,7 @@ export default function QiblaTab() {
                     onPress={refreshLocation}
                     style={[styles.refreshButton, { backgroundColor: Colors[colorScheme].primary }]}
                   >
-                    <ThemedText style={{ color: 'white', fontWeight: 'bold' }}>{t('try_again')}</ThemedText>
+                    <ThemedText style={{ color: Colors[colorScheme].icon, fontWeight: 'bold' }}>{t('try_again')}</ThemedText>
                   </TouchableOpacity>
                 </View>
               ) : location ? (
@@ -441,7 +441,6 @@ const styles = StyleSheet.create({
   },
   directionLabel: {
     fontSize: 16,
-    color: '#888',
     marginBottom: 4,
   },
   directionValue: {
@@ -487,7 +486,6 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   kaabaIconHighlight: {
-    shadowColor: '#10B981',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.8,
     shadowRadius: 8,

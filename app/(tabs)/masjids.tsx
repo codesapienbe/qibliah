@@ -177,7 +177,7 @@ export default function MasjidsTab() {
         />
         {manualError ? <Text style={{ color: Colors[colorScheme].error, marginBottom: 8 }}>{manualError}</Text> : null}
         <TouchableOpacity onPress={handleManualLocationSubmit} style={{ backgroundColor: Colors[colorScheme].primary, borderRadius: 8, paddingHorizontal: 20, paddingVertical: 10, marginTop: 8 }} disabled={geocoding}>
-          <Text style={{ color: 'white', fontWeight: 'bold' }}>{geocoding ? t('masjids_looking_up') : t('masjids_submit')}</Text>
+          <Text style={{ color: Colors[colorScheme].icon, fontWeight: 'bold' }}>{geocoding ? t('masjids_looking_up') : t('masjids_submit')}</Text>
         </TouchableOpacity>
         <Text style={{ color: Colors[colorScheme].text, marginTop: 20, textAlign: 'center', fontSize: 13 }}>
           {t('masjids_location_permission_info')}
@@ -210,7 +210,7 @@ export default function MasjidsTab() {
                     value={maxDistance}
                     onValueChange={setMaxDistance}
                     minimumTrackTintColor={Colors[colorScheme].primary}
-                    maximumTrackTintColor="#ccc"
+                    maximumTrackTintColor={Colors[colorScheme].cardBorder}
                     thumbTintColor={Colors[colorScheme].primary}
                   />
                 ) : (
@@ -218,10 +218,13 @@ export default function MasjidsTab() {
                     {[1, 2, 5, 10, 20, 30, 50].map((d) => (
                       <TouchableOpacity
                         key={d}
-                        style={[styles.filterBtn, maxDistance === d && styles.filterBtnActive]}
+                        style={[
+                          styles.filterBtn,
+                          { backgroundColor: maxDistance === d ? Colors[colorScheme].primary : Colors[colorScheme].surface },
+                        ]}
                         onPress={() => setMaxDistance(d)}
                       >
-                        <Text style={{ color: maxDistance === d ? '#fff' : '#333' }}>{d} km</Text>
+                        <Text style={{ color: maxDistance === d ? Colors[colorScheme].icon : Colors[colorScheme].text }}>{d} km</Text>
                       </TouchableOpacity>
                     ))}
                   </View>
@@ -280,30 +283,37 @@ export default function MasjidsTab() {
           </>
         }
         renderItem={({ item }) => (
-          <ThemedView style={styles.masjidCard}>
+          <ThemedView style={[
+            styles.masjidCard,
+            { backgroundColor: Colors[colorScheme].surface, borderColor: Colors[colorScheme].cardBorder },
+          ]}>
             <View style={styles.masjidHeader}>
               <View style={styles.masjidInfo}>
-                <ThemedText style={styles.masjidName}>{item.name}</ThemedText>
-                <ThemedText style={styles.masjidAddress}>{item.address}</ThemedText>
+                <ThemedText style={[styles.masjidName, { color: Colors[colorScheme].text }]}>{item.name}</ThemedText>
+                <ThemedText style={[styles.masjidAddress, { color: Colors[colorScheme].secondary }]}>{item.address}</ThemedText>
               </View>
-              <ThemedText style={styles.masjidDistance}>
+              <ThemedText style={[styles.masjidDistance, { color: Colors[colorScheme].secondary }] }>
                 {item.distance != null ? `${item.distance.toFixed(1)} km` : '--'}
               </ThemedText>
             </View>
             <View style={styles.masjidActions}>
               <TouchableOpacity
-                style={styles.actionBtn}
+                style={[styles.actionBtn, { backgroundColor: Colors[colorScheme].primary }]}
                 onPress={() => openDirections(item.coordinates[0], item.coordinates[1])}
                 activeOpacity={0.8}
               >
-                <ThemedText style={styles.actionBtnText}>{t('masjids_directions')}</ThemedText>
+                <ThemedText style={[styles.actionBtnText, { color: Colors[colorScheme].icon }]}>{t('masjids_directions')}</ThemedText>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.actionBtn, styles.secondaryBtn]}
+                style={[
+                  styles.actionBtn,
+                  styles.secondaryBtn,
+                  { backgroundColor: 'transparent', borderColor: Colors[colorScheme].primary },
+                ]}
                 onPress={openCall}
                 activeOpacity={0.8}
               >
-                <ThemedText style={[styles.actionBtnText, styles.secondaryBtnText]}>{t('masjids_call')}</ThemedText>
+                <ThemedText style={[styles.actionBtnText, { color: Colors[colorScheme].primary }]}>{t('masjids_call')}</ThemedText>
               </TouchableOpacity>
             </View>
           </ThemedView>
@@ -339,15 +349,12 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   filterBtn: {
-    backgroundColor: '#eee',
     borderRadius: 12,
     paddingHorizontal: 10,
     paddingVertical: 4,
     marginHorizontal: 2,
   },
-  filterBtnActive: {
-    backgroundColor: '#10B981',
-  },
+  filterBtnActive: {},
   map: {
     width: '100%',
     height: 260,
@@ -359,10 +366,8 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   masjidCard: {
-    backgroundColor: '#fff',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#eee',
     padding: 20,
     shadowColor: '#000',
     shadowOpacity: 0.04,
@@ -379,18 +384,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   masjidName: {
-    color: '#222',
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 4,
   },
   masjidAddress: {
-    color: '#888',
     fontSize: 14,
     marginBottom: 8,
   },
   masjidDistance: {
-    color: '#F59E0B',
     fontWeight: 'bold',
     fontSize: 16,
     marginLeft: 8,
@@ -403,23 +405,18 @@ const styles = StyleSheet.create({
   actionBtn: {
     paddingVertical: 8,
     paddingHorizontal: 16,
-    backgroundColor: '#10B981',
     borderRadius: 20,
     fontSize: 12,
     fontWeight: '600',
     marginRight: 8,
   },
   actionBtnText: {
-    color: '#fff',
     fontWeight: 'bold',
     fontSize: 14,
   },
   secondaryBtn: {
     backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: '#eee',
   },
-  secondaryBtnText: {
-    color: '#10B981',
-  },
+  secondaryBtnText: {},
 }); 
