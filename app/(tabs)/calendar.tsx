@@ -2,6 +2,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import React, { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { SafeAreaView, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -32,15 +33,15 @@ const LOCATION = {
   coords: '51.0656°N, 4.0409°E',
 };
 const MONTHS = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December'
+  'january', 'february', 'march', 'april', 'may', 'june',
+  'july', 'august', 'september', 'october', 'november', 'december'
 ];
-const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const WEEKDAYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
 // Add static mapping for Islamic months
 const ISLAMIC_MONTHS = [
-  'Muharram', 'Safar', 
-   'Rabi\' al-Awwal', 'Rabi\' al-Thani', 'Jumada al-Awwal', 'Jumada al-Thani',
-  'Rajab', 'Sha\'ban', 'Ramadan', 'Shawwal', 'Dhu al-Qi\'dah', 'Dhu al-Hijjah'
+  'muharram', 'safar', 
+   'rabi_al_awwal', 'rabi_al_thani', 'jumada_al_awwal', 'jumada_al_thani',
+  'rajab', 'shaban', 'ramadan', 'shawwal', 'dhu_al_qidah', 'dhu_al_hijjah'
 ];
 
 // Utility functions
@@ -83,14 +84,14 @@ function getCountdown(now: Date, nextPrayerTime: string): { hours: number; minut
   const seconds = Math.floor((diff % (1000 * 60)) / 1000);
   return { hours, minutes, seconds };
 }
-function getIslamicMonthName(month: number) {
-  // For demo, just map Gregorian month to Islamic month (not accurate)
-  return ISLAMIC_MONTHS[month % 12];
+function getIslamicMonthName(month: number, t: any) {
+  return t(ISLAMIC_MONTHS[month % 12]);
 }
 
 export default function CalendarTab() {
   const colorScheme = useColorScheme() ?? 'light';
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const today = new Date();
   const [currentDate, setCurrentDate] = useState(today);
   const [selectedDate, setSelectedDate] = useState(today);
@@ -133,17 +134,17 @@ export default function CalendarTab() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Colors[colorScheme].background }}>
       <View style={{ paddingTop: 16, paddingBottom: 8, alignItems: 'center' }}>
-        <ThemedText type="title" style={{ fontWeight: 'bold', color: Colors[colorScheme].primary, fontSize: 28 }}>Calendar</ThemedText>
+        <ThemedText type="title" style={{ fontWeight: 'bold', color: Colors[colorScheme].primary, fontSize: 28 }}>{t('calendar')}</ThemedText>
       </View>
       {/* Month Info (no background) */}
       <View style={{ alignItems: 'center', marginBottom: 8 }}>
-        <ThemedText style={{ fontSize: 22, fontWeight: 'bold', color: Colors[colorScheme].primary }}>{getIslamicMonthName(month)} {year}</ThemedText>
-        <ThemedText style={{ color: '#059669', fontSize: 14 }}>{MONTHS[month]} {year}</ThemedText>
+        <ThemedText style={{ fontSize: 22, fontWeight: 'bold', color: Colors[colorScheme].primary }}>{getIslamicMonthName(month, t)} {year}</ThemedText>
+        <ThemedText style={{ color: '#059669', fontSize: 14 }}>{t(MONTHS[month])} {year}</ThemedText>
         <TouchableOpacity
           onPress={goToToday}
           style={{ marginTop: 6, paddingVertical: 7, paddingHorizontal: 18, backgroundColor: 'rgba(16,185,129,0.08)', borderRadius: 12, alignItems: 'center' }}
         >
-          <ThemedText style={{ color: Colors[colorScheme].primary, fontWeight: '600', fontSize: 16 }}>Today</ThemedText>
+          <ThemedText style={{ color: Colors[colorScheme].primary, fontWeight: '600', fontSize: 16 }}>{t('today')}</ThemedText>
         </TouchableOpacity>
       </View>
       <ScrollView contentContainerStyle={{ flexGrow: 1, backgroundColor: Colors[colorScheme].background }}>
@@ -152,7 +153,7 @@ export default function CalendarTab() {
           <View style={{ flexDirection: 'row', backgroundColor: '#d1fae5', paddingVertical: 10, borderRadius: 12, marginHorizontal: 16, marginBottom: 2 }}>
             {WEEKDAYS.map((day) => (
               <View key={day} style={{ flex: 1, alignItems: 'center' }}>
-                <ThemedText style={{ color: '#065f46', fontWeight: 'bold', fontSize: 13, letterSpacing: 1 }}>{day}</ThemedText>
+                <ThemedText style={{ color: '#065f46', fontWeight: 'bold', fontSize: 13, letterSpacing: 1 }}>{t(day)}</ThemedText>
               </View>
             ))}
           </View>
@@ -202,9 +203,9 @@ export default function CalendarTab() {
           </View>
           {/* Word of the Day */}
           <View style={{ marginHorizontal: 16, marginTop: 12, padding: 14, backgroundColor: '#f3f4f6', borderRadius: 14, alignItems: 'center' }}>
-            <ThemedText style={{ color: Colors[colorScheme].primary, fontWeight: 'bold', fontSize: 16, marginBottom: 4 }}>Word of the Day</ThemedText>
+            <ThemedText style={{ color: Colors[colorScheme].primary, fontWeight: 'bold', fontSize: 16, marginBottom: 4 }}>{t('word_of_the_day')}</ThemedText>
             <ThemedText style={{ color: '#374151', fontSize: 15, textAlign: 'center' }} numberOfLines={3}>
-              "Verily, with hardship comes ease." (Quran 94:6)
+              {t('word_of_the_day_quote')}
             </ThemedText>
           </View>
         </View>

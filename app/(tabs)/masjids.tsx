@@ -4,6 +4,7 @@ import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import * as Location from 'expo-location';
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Alert, FlatList, Linking, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -63,6 +64,7 @@ function openCall() {
 
 export default function MasjidsTab() {
   const colorScheme = useColorScheme() ?? 'light';
+  const { t } = useTranslation();
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [manualLocation, setManualLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -82,7 +84,7 @@ export default function MasjidsTab() {
       try {
         let { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== 'granted') {
-          setErrorMsg('Permission to access location was denied. You can enter your location manually.');
+          setErrorMsg(t('masjids_location_permission_denied'));
           setPermissionDenied(true);
           setLoading(false);
           return;
@@ -91,7 +93,7 @@ export default function MasjidsTab() {
         setLocation({ lat: loc.coords.latitude, lng: loc.coords.longitude });
         setPermissionDenied(false);
       } catch (e) {
-        setErrorMsg('Could not get location. You can enter your location manually.');
+        setErrorMsg(t('masjids_location_error'));
         setPermissionDenied(true);
       } finally {
         setLoading(false);
@@ -105,7 +107,7 @@ export default function MasjidsTab() {
   // Manual location submit handler (geocode address)
   const handleManualLocationSubmit = async () => {
     if (!manualCountry || !manualCity) {
-      setManualError('Please enter both country and city.');
+      setManualError(t('masjids_enter_country_city'));
       return;
     }
     setManualError('');
@@ -114,13 +116,13 @@ export default function MasjidsTab() {
       const address = `${manualPostcode ? manualPostcode + ', ' : ''}${manualCity}, ${manualCountry}`;
       const results = await Location.geocodeAsync(address);
       if (!results || results.length === 0) {
-        setManualError('Could not find location for the entered address.');
+        setManualError(t('masjids_location_not_found'));
         setGeocoding(false);
         return;
       }
       setManualLocation({ lat: results[0].latitude, lng: results[0].longitude });
     } catch (e) {
-      setManualError('Geocoding failed. Please check your input.');
+      setManualError(t('masjids_geocoding_failed'));
     } finally {
       setGeocoding(false);
     }
@@ -149,25 +151,25 @@ export default function MasjidsTab() {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: Colors[colorScheme].background, justifyContent: 'center', alignItems: 'center' }}>
         <ThemedText type="title" style={{ fontWeight: 'bold', color: Colors[colorScheme].primary, fontSize: 28, marginBottom: 16 }}>
-          Enter Your Location
+          {t('masjids_enter_location')}
         </ThemedText>
         <TextInput
           style={{ borderWidth: 1, borderColor: Colors[colorScheme].cardBorder, borderRadius: 8, padding: 10, width: 220, marginBottom: 12, color: Colors[colorScheme].text }}
-          placeholder="Country (e.g. Belgium)"
+          placeholder={t('masjids_country_placeholder')}
           placeholderTextColor={Colors[colorScheme].text}
           value={manualCountry}
           onChangeText={setManualCountry}
         />
         <TextInput
           style={{ borderWidth: 1, borderColor: Colors[colorScheme].cardBorder, borderRadius: 8, padding: 10, width: 220, marginBottom: 12, color: Colors[colorScheme].text }}
-          placeholder="City (e.g. Zele)"
+          placeholder={t('masjids_city_placeholder')}
           placeholderTextColor={Colors[colorScheme].text}
           value={manualCity}
           onChangeText={setManualCity}
         />
         <TextInput
           style={{ borderWidth: 1, borderColor: Colors[colorScheme].cardBorder, borderRadius: 8, padding: 10, width: 220, marginBottom: 12, color: Colors[colorScheme].text }}
-          placeholder="Postcode (optional)"
+          placeholder={t('masjids_postcode_placeholder')}
           placeholderTextColor={Colors[colorScheme].text}
           value={manualPostcode}
           onChangeText={setManualPostcode}
@@ -175,10 +177,10 @@ export default function MasjidsTab() {
         />
         {manualError ? <Text style={{ color: Colors[colorScheme].error, marginBottom: 8 }}>{manualError}</Text> : null}
         <TouchableOpacity onPress={handleManualLocationSubmit} style={{ backgroundColor: Colors[colorScheme].primary, borderRadius: 8, paddingHorizontal: 20, paddingVertical: 10, marginTop: 8 }} disabled={geocoding}>
-          <Text style={{ color: 'white', fontWeight: 'bold' }}>{geocoding ? 'Looking up...' : 'Submit'}</Text>
+          <Text style={{ color: 'white', fontWeight: 'bold' }}>{geocoding ? t('masjids_looking_up') : t('masjids_submit')}</Text>
         </TouchableOpacity>
         <Text style={{ color: Colors[colorScheme].text, marginTop: 20, textAlign: 'center', fontSize: 13 }}>
-          Location permission is required for automatic detection. You can enter your country, city, and postcode to look up your location.
+          {t('masjids_location_permission_info')}
         </Text>
       </SafeAreaView>
     );
@@ -187,7 +189,7 @@ export default function MasjidsTab() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Colors[colorScheme].background }}>
       <View style={{ paddingTop: 16, paddingBottom: 8, alignItems: 'center' }}>
-        <ThemedText type="title" style={{ fontWeight: 'bold', color: Colors[colorScheme].primary, fontSize: 28 }}>Masjids Nearby</ThemedText>
+        <ThemedText type="title" style={{ fontWeight: 'bold', color: Colors[colorScheme].primary, fontSize: 28 }}>{t('masjids_nearby')}</ThemedText>
       </View>
       <FlatList
         data={loading || errorMsg ? [] : filteredMasjids}
@@ -198,7 +200,7 @@ export default function MasjidsTab() {
             {/* Distance Filter */}
             {effectiveLocation && (
               <View style={styles.filterRow}>
-                <ThemedText style={{ marginRight: 8 }}>Within</ThemedText>
+                <ThemedText style={{ marginRight: 8 }}>{t('masjids_within')}</ThemedText>
                 {Slider ? (
                   <Slider
                     style={{ flex: 1, marginHorizontal: 8 }}
@@ -260,7 +262,7 @@ export default function MasjidsTab() {
             {effectiveLocation && !loading && !errorMsg && filteredMasjids.length === 0 && (
               <View style={{ alignItems: 'center', marginVertical: 16 }}>
                 <ThemedText style={{ color: Colors[colorScheme].warning, fontWeight: 'bold' }}>
-                  No masjids found within {maxDistance} km.
+                  {t('masjids_no_found', { maxDistance })}
                 </ThemedText>
               </View>
             )}
@@ -268,7 +270,7 @@ export default function MasjidsTab() {
             {loading ? (
               <View style={{ alignItems: 'center', padding: 16 }}>
                 <ActivityIndicator size="small" color={Colors[colorScheme].primary} />
-                <ThemedText style={{ marginTop: 8 }}>Getting your location...</ThemedText>
+                <ThemedText style={{ marginTop: 8 }}>{t('masjids_getting_location')}</ThemedText>
               </View>
             ) : errorMsg ? (
               <View style={{ alignItems: 'center', padding: 16 }}>
@@ -294,14 +296,14 @@ export default function MasjidsTab() {
                 onPress={() => openDirections(item.coordinates[0], item.coordinates[1])}
                 activeOpacity={0.8}
               >
-                <ThemedText style={styles.actionBtnText}>Directions</ThemedText>
+                <ThemedText style={styles.actionBtnText}>{t('masjids_directions')}</ThemedText>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.actionBtn, styles.secondaryBtn]}
                 onPress={openCall}
                 activeOpacity={0.8}
               >
-                <ThemedText style={[styles.actionBtnText, styles.secondaryBtnText]}>Call</ThemedText>
+                <ThemedText style={[styles.actionBtnText, styles.secondaryBtnText]}>{t('masjids_call')}</ThemedText>
               </TouchableOpacity>
             </View>
           </ThemedView>
