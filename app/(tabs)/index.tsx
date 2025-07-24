@@ -8,6 +8,7 @@ import { deleteGroqToken, getGroqToken, saveGroqToken } from '@/utils/tokenStora
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import React, { useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   FlatList,
   Keyboard,
@@ -26,13 +27,16 @@ const INITIAL_MESSAGES = [
   {
     id: 'ai-0',
     sender: 'ai',
-    text: "Assalamu Alaikum! I am your Quranic AI assistant. I can help you understand verses from the Holy Quran. How can I assist you today?",
+    text: "__I18N_ASSISTANT_WELCOME__", // Will be replaced with t('assistant_welcome')
     isInitial: true,
   },
 ];
 
 export default function HomeScreen() {
-  const [messages, setMessages, messagesLoading] = useAssistantMessages(INITIAL_MESSAGES);
+  const { t } = useTranslation();
+  const [messages, setMessages, messagesLoading] = useAssistantMessages([
+    { ...INITIAL_MESSAGES[0], text: t('assistant_welcome') },
+  ]);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
   const colorScheme = useColorScheme() ?? 'light';
@@ -175,7 +179,7 @@ export default function HomeScreen() {
         <TouchableOpacity style={{ position: 'absolute', left: 16, top: 16, zIndex: 2 }} onPress={() => { setPendingRemember(rememberChat); setShowRememberModal(true); }}>
           <Ionicons name={rememberChat ? 'bulb' : 'bulb-outline'} size={26} color={Colors[colorScheme].primary} />
         </TouchableOpacity>
-        <ThemedText type="title" style={{ fontWeight: 'bold', color: Colors[colorScheme].primary, fontSize: 28, marginHorizontal: 56, textAlign: 'center', flex: 1 }}>Quranic AI</ThemedText>
+        <ThemedText type="title" style={{ fontWeight: 'bold', color: Colors[colorScheme].primary, fontSize: 28, marginHorizontal: 56, textAlign: 'center', flex: 1 }}>{t('quranic_ai')}</ThemedText>
         <View style={{ flexDirection: 'row', position: 'absolute', right: 16, top: 16, zIndex: 2 }}>
           <TouchableOpacity style={{ marginRight: 16 }} onPress={() => setMessages(INITIAL_MESSAGES)}>
             <Ionicons name="trash-outline" size={26} color={Colors[colorScheme].primary} />
@@ -189,12 +193,10 @@ export default function HomeScreen() {
       {showRememberModal && (
         <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.4)', zIndex: 100, justifyContent: 'center', alignItems: 'center' }}>
           <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 24, width: '80%', alignItems: 'center' }}>
-            <ThemedText style={{ fontWeight: 'bold', fontSize: 18, marginBottom: 12, color: Colors[colorScheme].primary }}>Conversation Memory</ThemedText>
-            <ThemedText style={{ color: '#374151', fontSize: 15, textAlign: 'center', marginBottom: 16 }}>
-              When activated, the AI will remember your full chat history for better context. When off, only your latest message is sent.
-            </ThemedText>
+            <ThemedText style={{ fontWeight: 'bold', fontSize: 18, marginBottom: 12, color: Colors[colorScheme].primary }}>{t('conversation_memory')}</ThemedText>
+            <ThemedText style={{ color: '#374151', fontSize: 15, textAlign: 'center', marginBottom: 16 }}>{t('memory_explanation')}</ThemedText>
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
-              <ThemedText style={{ fontSize: 16, marginRight: 10, color: Colors[colorScheme].primary }}>Remember Chat</ThemedText>
+              <ThemedText style={{ fontSize: 16, marginRight: 10, color: Colors[colorScheme].primary }}>{t('remember_chat')}</ThemedText>
               <Switch
                 value={pendingRemember}
                 onValueChange={setPendingRemember}
@@ -207,13 +209,13 @@ export default function HomeScreen() {
                 style={{ backgroundColor: Colors[colorScheme].primary, borderRadius: 8, paddingVertical: 8, paddingHorizontal: 18 }}
                 onPress={() => { setRememberChat(pendingRemember); setShowRememberModal(false); }}
               >
-                <ThemedText style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Save</ThemedText>
+                <ThemedText style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>{t('save')}</ThemedText>
               </TouchableOpacity>
               <TouchableOpacity
                 style={{ backgroundColor: '#eee', borderRadius: 8, paddingVertical: 8, paddingHorizontal: 18 }}
                 onPress={() => setShowRememberModal(false)}
               >
-                <ThemedText style={{ color: Colors[colorScheme].primary, fontWeight: 'bold', fontSize: 16 }}>Cancel</ThemedText>
+                <ThemedText style={{ color: Colors[colorScheme].primary, fontWeight: 'bold', fontSize: 16 }}>{t('cancel')}</ThemedText>
               </TouchableOpacity>
             </View>
           </View>
@@ -223,10 +225,10 @@ export default function HomeScreen() {
       {showApiKeyPrompt && (
         <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.4)', zIndex: 100, justifyContent: 'center', alignItems: 'center' }}>
           <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 24, width: '80%', alignItems: 'center' }}>
-            <ThemedText style={{ fontWeight: 'bold', fontSize: 18, marginBottom: 12, color: Colors[colorScheme].primary }}>Enter Groq API Key</ThemedText>
+            <ThemedText style={{ fontWeight: 'bold', fontSize: 18, marginBottom: 12, color: Colors[colorScheme].primary }}>{t('enter_groq_api_key')}</ThemedText>
             <TextInput
               style={{ borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 10, width: '100%', marginBottom: 16, fontSize: 16 }}
-              placeholder="sk-..."
+              placeholder={t('api_key_placeholder')}
               value={showingMasked && groqApiKey ? '************' : tempApiKey}
               onChangeText={text => {
                 setTempApiKey(text);
@@ -255,7 +257,7 @@ export default function HomeScreen() {
                   setShowingMasked(true);
                 }}
               >
-                <ThemedText style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Save</ThemedText>
+                <ThemedText style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>{t('save')}</ThemedText>
               </TouchableOpacity>
               <TouchableOpacity
                 style={{ backgroundColor: '#eee', borderRadius: 8, paddingVertical: 8, paddingHorizontal: 18 }}
@@ -265,7 +267,7 @@ export default function HomeScreen() {
                   setShowingMasked(true);
                 }}
               >
-                <ThemedText style={{ color: Colors[colorScheme].primary, fontWeight: 'bold', fontSize: 16 }}>Cancel</ThemedText>
+                <ThemedText style={{ color: Colors[colorScheme].primary, fontWeight: 'bold', fontSize: 16 }}>{t('cancel')}</ThemedText>
               </TouchableOpacity>
               {groqApiKey && (
                 <TouchableOpacity
@@ -278,7 +280,7 @@ export default function HomeScreen() {
                     setShowingMasked(true);
                   }}
                 >
-                  <ThemedText style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Remove API Key</ThemedText>
+                  <ThemedText style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>{t('remove_api_key')}</ThemedText>
                 </TouchableOpacity>
               )}
             </View>
@@ -322,7 +324,7 @@ export default function HomeScreen() {
             <View style={styles.textInputWrapper}>
               <TextInput
                 style={styles.input}
-                placeholder="Type your message..."
+                placeholder={t('type_message_placeholder')}
                 placeholderTextColor="#aaa"
                 value={input}
                 onChangeText={setInput}

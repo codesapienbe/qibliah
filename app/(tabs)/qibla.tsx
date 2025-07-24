@@ -5,9 +5,12 @@ import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { useLocation } from '@/hooks/useLocation';
 import { useQiblaDirection } from '@/hooks/useQiblaDirection';
+import { calculateQibla, haversineDistance } from '@/utils/qibla';
+import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import React from 'react';
-import { ActivityIndicator, Button, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const COMPASS_SIZE = 240;
@@ -18,33 +21,9 @@ const KAABA = {
   lng: 39.8262
 };
 
-// Inline calculation functions
-function calculateQibla(lat: number, lng: number, kaabaLat: number, kaabaLng: number): number {
-  const kaabaLatRad = kaabaLat * Math.PI / 180;
-  const kaabaLngRad = kaabaLng * Math.PI / 180;
-  const userLatRad = lat * Math.PI / 180;
-  const userLngRad = lng * Math.PI / 180;
-  const dLng = kaabaLngRad - userLngRad;
-  const y = Math.sin(dLng);
-  const x = Math.cos(userLatRad) * Math.tan(kaabaLatRad) - Math.sin(userLatRad) * Math.cos(dLng);
-  let bearing = Math.atan2(y, x) * 180 / Math.PI;
-  bearing = (bearing + 360) % 360;
-  return bearing;
-}
-
-function haversineDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
-  const R = 6371;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLng = (lng2 - lng1) * Math.PI / 180;
-  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-    Math.sin(dLng/2) * Math.sin(dLng/2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  return R * c;
-}
-
 export default function QiblaTab() {
   const colorScheme = useColorScheme() ?? 'light';
+  const { t } = useTranslation();
   const {
     location,
     errorMsg: locationError,
@@ -92,7 +71,7 @@ export default function QiblaTab() {
     const lat = parseFloat(manualLat);
     const lng = parseFloat(manualLng);
     if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-      setManualError('Please enter valid latitude and longitude values.');
+      setManualError(t('qibla_invalid_latlng'));
       return;
     }
     setManualError('');
@@ -154,11 +133,11 @@ export default function QiblaTab() {
       {permissionDenied && !location ? (
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <ThemedText type="title" style={{ fontWeight: 'bold', color: Colors[colorScheme].primary, fontSize: 28, marginBottom: 16 }}>
-            Enter Your Location
+            {t('qibla_enter_location')}
           </ThemedText>
           <TextInput
             style={{ borderWidth: 1, borderColor: Colors[colorScheme].cardBorder, borderRadius: 8, padding: 10, width: 220, marginBottom: 12, color: Colors[colorScheme].text }}
-            placeholder="Latitude (e.g. 51.0333)"
+            placeholder={t('qibla_latitude_placeholder')}
             placeholderTextColor={Colors[colorScheme].text}
             value={manualLat}
             onChangeText={setManualLat}
@@ -166,23 +145,38 @@ export default function QiblaTab() {
           />
           <TextInput
             style={{ borderWidth: 1, borderColor: Colors[colorScheme].cardBorder, borderRadius: 8, padding: 10, width: 220, marginBottom: 12, color: Colors[colorScheme].text }}
-            placeholder="Longitude (e.g. 4.0667)"
+            placeholder={t('qibla_longitude_placeholder')}
             placeholderTextColor={Colors[colorScheme].text}
             value={manualLng}
             onChangeText={setManualLng}
             keyboardType="numeric"
           />
           {manualError ? <Text style={{ color: Colors[colorScheme].error, marginBottom: 8 }}>{manualError}</Text> : null}
-          <Button title="Submit" onPress={handleManualLocationSubmit} color={Colors[colorScheme].primary} />
+          <TouchableOpacity
+            onPress={handleManualLocationSubmit}
+            style={{
+              backgroundColor: Colors[colorScheme].primary,
+              borderRadius: 8,
+              padding: 10,
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 50,
+              alignSelf: 'center',
+              marginBottom: 8,
+            }}
+            accessibilityLabel={t('qibla_submit_manual_location')}
+          >
+            <Ionicons name="checkmark-circle" size={28} color="#fff" />
+          </TouchableOpacity>
           <Text style={{ color: Colors[colorScheme].text, marginTop: 20, textAlign: 'center', fontSize: 13 }}>
-            Location permission is required for automatic detection. You can enter your coordinates manually if you prefer.
+            {t('qibla_location_permission_info')}
           </Text>
         </View>
       ) : (
         <>
           <View style={{ paddingTop: 16, paddingBottom: 8, alignItems: 'center' }}>
             <ThemedText type="title" style={{ fontWeight: 'bold', color: Colors[colorScheme].primary, fontSize: 28 }}>
-              Qibla Direction
+              {t('qibla_direction')}
             </ThemedText>
           </View>
           
@@ -203,10 +197,10 @@ export default function QiblaTab() {
                 >
                   {/* Compass Markings */}
                   <View style={styles.compassMarkings}>
-                    <ThemedText style={[styles.compassMark, styles.north, { color: '#ff4444' }]}>N</ThemedText>
-                    <ThemedText style={[styles.compassMark, styles.east, { color: Colors[colorScheme].text }]}>E</ThemedText>
-                    <ThemedText style={[styles.compassMark, styles.south, { color: Colors[colorScheme].text }]}>S</ThemedText>
-                    <ThemedText style={[styles.compassMark, styles.west, { color: Colors[colorScheme].text }]}>W</ThemedText>
+                    <ThemedText style={[styles.compassMark, styles.north, { color: '#ff4444' }]}>{t('north_short')}</ThemedText>
+                    <ThemedText style={[styles.compassMark, styles.east, { color: Colors[colorScheme].text }]}>{t('east_short')}</ThemedText>
+                    <ThemedText style={[styles.compassMark, styles.south, { color: Colors[colorScheme].text }]}>{t('south_short')}</ThemedText>
+                    <ThemedText style={[styles.compassMark, styles.west, { color: Colors[colorScheme].text }]}>{t('west_short')}</ThemedText>
                   </View>
                   
                   {/* Center dot */}
@@ -251,7 +245,7 @@ export default function QiblaTab() {
                     )}
                     {!compassLoading && !compassError && heading === null && (
                       <ThemedText style={{ color: Colors[colorScheme].error, textAlign: 'center', fontSize: 12 }}>
-                        Compass unavailable
+                        {t('qibla_compass_unavailable')}
                       </ThemedText>
                     )}
                   </View>
@@ -261,7 +255,7 @@ export default function QiblaTab() {
               {/* Direction Info */}
               <View style={styles.qiblaInfo}>
                 <ThemedText style={[styles.directionLabel, { color: Colors[colorScheme].text }]}>
-                  Qibla Direction
+                  {t('qibla_direction')}
                 </ThemedText>
                 {qiblaDegrees !== null ? (
                   <>
@@ -269,23 +263,23 @@ export default function QiblaTab() {
                       styles.directionValue, 
                       { color: isNearQibla ? '#10B981' : '#F59E0B' }
                     ]}>
-                      {qiblaDegrees}
+                      <Text>{qiblaDegrees !== null ? qiblaDegrees : ''}</Text>
                       <Text style={{fontSize: 32}}>°</Text>
                     </ThemedText>
                     {isNearQibla && (
                       <ThemedText style={[styles.alignedText, { color: '#10B981' }]}>
-                        ✓ Facing Qibla
+                        {t('qibla_facing_qibla')}
                       </ThemedText>
                     )}
                     {accuracy && (
                       <ThemedText style={{ color: Colors[colorScheme].text, fontSize: 12, marginTop: 4 }}>
-                        Accuracy: {accuracy.toFixed(1)}
+                        {t('qibla_accuracy', { value: accuracy.toFixed(1) })}
                       </ThemedText>
                     )}
                   </>
                 ) : (
                   <ThemedText style={{ color: Colors[colorScheme].error, fontSize: 16 }}>
-                    Waiting for location...
+                    {t('qibla_waiting_for_location')}
                   </ThemedText>
                 )}
               </View>
@@ -300,7 +294,7 @@ export default function QiblaTab() {
                 <View style={styles.centerContent}>
                   <ActivityIndicator size="small" color={Colors[colorScheme].primary} />
                   <ThemedText style={{ marginTop: 8, color: Colors[colorScheme].text }}>
-                    Getting your location...
+                    {t('qibla_getting_location')}
                   </ThemedText>
                 </View>
               ) : locationError ? (
@@ -312,29 +306,29 @@ export default function QiblaTab() {
                     onPress={refreshLocation}
                     style={[styles.refreshButton, { backgroundColor: Colors[colorScheme].primary }]}
                   >
-                    <ThemedText style={{ color: 'white', fontWeight: 'bold' }}>Try Again</ThemedText>
+                    <ThemedText style={{ color: 'white', fontWeight: 'bold' }}>{t('try_again')}</ThemedText>
                   </TouchableOpacity>
                 </View>
               ) : location ? (
                 <>
                   <View style={[styles.locationRow, { borderBottomColor: Colors[colorScheme].cardBorder }]}>
-                    <ThemedText style={{ color: Colors[colorScheme].text }}>Your Location:</ThemedText>
+                    <ThemedText style={{ color: Colors[colorScheme].text }}>{t('qibla_your_location')}:</ThemedText>
                     <ThemedText style={{ color: Colors[colorScheme].text, fontFamily: 'monospace' }}>
-                      {coordsStr ? <Text>{coordsStr}</Text> : null}
+                      {coordsStr ? <Text>{coordsStr}</Text> : coordsStr !== null ? <Text>{coordsStr}</Text> : <Text />}
                     </ThemedText>
                   </View>
                   <View style={[styles.locationRow, { borderBottomColor: Colors[colorScheme].cardBorder }]}>
-                    <ThemedText style={{ color: Colors[colorScheme].text }}>Distance to Mecca:</ThemedText>
+                    <ThemedText style={{ color: Colors[colorScheme].text }}>{t('qibla_distance_to_mecca')}:</ThemedText>
                     <ThemedText style={{ color: Colors[colorScheme].text, fontWeight: 'bold' }}>
-                      {distance ? <Text>{distance}</Text> : null}
+                      {distance ? <Text>{distance}</Text> : distance !== null ? <Text>{distance}</Text> : <Text />}
                     </ThemedText>
                   </View>
                   <View style={[styles.locationRow, { borderBottomWidth: 0 }]}>
-                    <ThemedText style={{ color: Colors[colorScheme].text }}>Kaaba (Mecca):</ThemedText>
+                    <ThemedText style={{ color: Colors[colorScheme].text }}>{t('qibla_kaaba_mecca')}:</ThemedText>
                     <ThemedText style={{ color: Colors[colorScheme].text, fontFamily: 'monospace' }}>
-                      {KAABA.lat.toFixed(4)}
+                      <Text>{KAABA.lat.toFixed(4)}</Text>
                       <Text style={{fontSize: 14}}>°N, </Text>
-                      {KAABA.lng.toFixed(4)}
+                      <Text>{KAABA.lng.toFixed(4)}</Text>
                       <Text style={{fontSize: 14}}>°E</Text>
                     </ThemedText>
                   </View>
@@ -342,7 +336,7 @@ export default function QiblaTab() {
               ) : (
                 <View style={styles.centerContent}>
                   <ThemedText style={{ color: Colors[colorScheme].error }}>
-                    Location not available
+                    {t('qibla_location_not_available')}
                   </ThemedText>
                 </View>
               )}

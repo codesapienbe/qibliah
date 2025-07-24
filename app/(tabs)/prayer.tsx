@@ -2,33 +2,35 @@ import { ThemedText } from '@/components/ThemedText';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { SafeAreaView, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function PrayerTab() {
   const colorScheme = useColorScheme() ?? 'light';
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
 
   // Placeholder state
-  const [nextPrayer] = useState({ name: 'Fajr', time: '05:30' });
+  const [nextPrayer] = useState({ name: t('fajr'), time: '05:30' });
   const [countdown] = useState({ hours: 2, minutes: 15, seconds: 10 });
   const [reminders] = useState([
-    { id: 1, prayer: 'Fajr', time: '05:30', enabled: true },
-    { id: 2, prayer: 'Dhuhr', time: '12:30', enabled: true },
-    { id: 3, prayer: 'Asr', time: '15:45', enabled: true },
-    { id: 4, prayer: 'Maghrib', time: '18:15', enabled: true },
-    { id: 5, prayer: 'Isha', time: '20:45', enabled: true },
+    { id: 1, prayer: t('fajr'), time: '05:30', enabled: true },
+    { id: 2, prayer: t('dhuhr'), time: '12:30', enabled: true },
+    { id: 3, prayer: t('asr'), time: '15:45', enabled: true },
+    { id: 4, prayer: t('maghrib'), time: '18:15', enabled: true },
+    { id: 5, prayer: t('isha'), time: '20:45', enabled: true },
   ]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Colors[colorScheme].background }}>
       <View style={{ paddingTop: 16, paddingBottom: 8, alignItems: 'center' }}>
-        <ThemedText type="title" style={{ fontWeight: 'bold', color: Colors[colorScheme].primary, fontSize: 28 }}>Prayer Times</ThemedText>
+        <ThemedText type="title" style={{ fontWeight: 'bold', color: Colors[colorScheme].primary, fontSize: 28 }}>{t('prayer_times')}</ThemedText>
       </View>
       <ScrollView contentContainerStyle={{ flexGrow: 1, backgroundColor: Colors[colorScheme].background }}>
         {/* Next Prayer Countdown */}
         <View style={{ alignItems: 'center', marginVertical: 16 }}>
-          <ThemedText style={{ color: Colors[colorScheme].info, marginBottom: 4 }}>Next Prayer</ThemedText>
+          <ThemedText style={{ color: Colors[colorScheme].info, marginBottom: 4 }}>{t('next_prayer')}</ThemedText>
           <ThemedText style={{ color: Colors[colorScheme].secondary, fontWeight: 'bold', fontSize: 18 }}>{nextPrayer.name}</ThemedText>
           <ThemedText style={{ color: Colors[colorScheme].primary, fontWeight: 'bold', fontSize: 18 }}>{nextPrayer.time}</ThemedText>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
@@ -41,17 +43,17 @@ export default function PrayerTab() {
         </View>
         {/* Prayer Times Table (placeholder) */}
         <View style={{ marginHorizontal: 16, marginTop: 8, padding: 14, backgroundColor: '#d1fae5', borderRadius: 14 }}>
-          <ThemedText style={{ color: Colors[colorScheme].primary, fontWeight: 'bold', fontSize: 16, marginBottom: 4 }}>Today's Prayer Times</ThemedText>
+          <ThemedText style={{ color: Colors[colorScheme].primary, fontWeight: 'bold', fontSize: 16, marginBottom: 4 }}>{t('todays_prayer_times')}</ThemedText>
           {/* ...prayer times grid/table here... */}
         </View>
         {/* Reminders (placeholder) */}
         <View style={{ marginHorizontal: 16, marginTop: 16, padding: 14, backgroundColor: '#fff', borderRadius: 14 }}>
-          <ThemedText style={{ color: Colors[colorScheme].primary, fontWeight: 'bold', fontSize: 16, marginBottom: 4 }}>Reminders</ThemedText>
+          <ThemedText style={{ color: Colors[colorScheme].primary, fontWeight: 'bold', fontSize: 16, marginBottom: 4 }}>{t('reminders')}</ThemedText>
           {/* ...reminders toggle list here... */}
         </View>
         {/* Stats (placeholder) */}
         <View style={{ marginHorizontal: 16, marginTop: 16, padding: 14, backgroundColor: '#f3f4f6', borderRadius: 14 }}>
-          <ThemedText style={{ color: Colors[colorScheme].primary, fontWeight: 'bold', fontSize: 16, marginBottom: 4 }}>Stats</ThemedText>
+          <ThemedText style={{ color: Colors[colorScheme].primary, fontWeight: 'bold', fontSize: 16, marginBottom: 4 }}>{t('stats')}</ThemedText>
           {/* ...stats here... */}
         </View>
       </ScrollView>
