@@ -4,10 +4,12 @@ import { ThemedView } from '@/components/ThemedView';
 import { Colors } from '@/constants/Colors';
 import { useAssistantMessages } from '@/hooks/useAssistantMessages';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { useVoiceInput } from '@/hooks/useVoiceInput';
 import { formatSurahAyatMessage } from '@/utils/formatSurahAyatMessage';
 import { deleteGroqToken, getGroqToken, saveGroqToken } from '@/utils/tokenStorage';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import * as Speech from 'expo-speech';
 import React, { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -51,6 +53,7 @@ export default function HomeScreen() {
   const [rememberChat, setRememberChat] = useState(true);
   const [showRememberModal, setShowRememberModal] = useState(false);
   const [pendingRemember, setPendingRemember] = useState(rememberChat);
+  const { listening, error: voiceError, results: voiceResults, partial, start, stop } = useVoiceInput();
 
   React.useEffect(() => {
     // Load Groq API token from secure storage on mount
@@ -101,8 +104,26 @@ export default function HomeScreen() {
   };
 
   const handleVoiceInput = async () => {
-    alert('Voice input not implemented yet.');
+    if (listening) {
+      await stop();
+    } else {
+      await start(i18n.language === 'tr' ? 'tr-TR' : i18n.language === 'nl' ? 'nl-NL' : 'en-US');
+    }
   };
+
+  const handleSpeak = (text: string) => {
+    let lang = 'en-US';
+    if (i18n.language === 'tr') lang = 'tr-TR';
+    else if (i18n.language === 'nl') lang = 'nl-NL';
+    Speech.speak(text, { language: lang });
+  };
+
+  // Update input when voice recognition result comes in
+  React.useEffect(() => {
+    if (voiceResults && voiceResults[0]) {
+      setInput(voiceResults[0]);
+    }
+  }, [voiceResults]);
 
   const GOODBYE_PATTERNS = [
     /\bbye\b/i,
@@ -186,11 +207,29 @@ export default function HomeScreen() {
     }, 100);
   };
 
-  const renderAvatar = (sender: string) => {
+  const renderAvatar = (sender: string, aiText?: string) => {
     if (sender === 'ai') {
       return (
-        <View style={[styles.avatarCircle, { backgroundColor: Colors[colorScheme].surface, borderColor: Colors[colorScheme].primary }] }>
-          <Ionicons name="chatbubbles" size={22} color={Colors[colorScheme].primary} />
+        <View style={{ alignItems: 'center' }}>
+          <TouchableOpacity
+            onPress={() => aiText && handleSpeak(aiText)}
+            style={[
+              styles.avatarCircle,
+              {
+                marginBottom: 16, // doubled space (avatarCircle default margin is 4-8)
+                backgroundColor: Colors[colorScheme].surface,
+                borderColor: Colors[colorScheme].primary,
+                alignItems: 'center',
+                justifyContent: 'center',
+              },
+            ]}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="volume-high-outline" size={22} color={Colors[colorScheme].primary} />
+          </TouchableOpacity>
+          <View style={[styles.avatarCircle, { backgroundColor: Colors[colorScheme].surface, borderColor: Colors[colorScheme].primary }] }>
+            <Ionicons name="chatbubbles" size={22} color={Colors[colorScheme].primary} />
+          </View>
         </View>
       );
     }
@@ -205,7 +244,7 @@ export default function HomeScreen() {
     const isUser = item.sender === 'user';
     return (
       <View style={[styles.messageRow, isUser ? styles.userRow : styles.aiRow]}>
-        {!isUser && renderAvatar('ai')}
+        {!isUser && renderAvatar('ai', item.text)}
         <ThemedView
           style={[
             styles.messageBubble,
@@ -391,9 +430,15 @@ export default function HomeScreen() {
                 multiline
                 numberOfLines={3}
               />
+              {listening && (
+                <ThemedText style={{ color: '#2563eb', fontSize: 13, marginTop: 2 }}>
+                  {partial ? `"${partial}"` : t('listening')}
+                </ThemedText>
+              )}
             </View>
             <TouchableOpacity style={styles.micButton} onPress={handleVoiceInput}>
-              <Ionicons name="mic" size={22} color="#10B981" />
+              <Ionicons name={listening ? "mic-circle" : "mic"} size={22} color={listening ? "#2563eb" : "#10B981"} />
+              {listening && <ThemedText style={{ color: '#2563eb', fontSize: 12, marginLeft: 4 }}>●</ThemedText>}
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.sendButton, { backgroundColor: input.trim() && !sending ? '#10B981' : '#ccc' }]}
