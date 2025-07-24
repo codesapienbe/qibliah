@@ -9,12 +9,15 @@ import i18n from '../utils/i18n';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
+  const router = useRouter();
 
   if (!loaded) {
     // Async font loading only occurs in development.
@@ -27,7 +30,21 @@ export default function RootLayout() {
         <I18nextProvider i18n={i18n}>
           <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
             <Stack>
-              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              <Stack.Screen
+                name="(tabs)"
+                options={{
+                  headerRight: () => (
+                    <Ionicons
+                      name="settings-outline"
+                      size={26}
+                      style={{ marginRight: 18 }}
+                      color={colorScheme === 'dark' ? '#fff' : '#222'}
+                      onPress={() => router.push('/settings')}
+                    />
+                  ),
+                  headerShown: true,
+                }}
+              />
               <Stack.Screen name="+not-found" />
             </Stack>
             <StatusBar style="auto" />

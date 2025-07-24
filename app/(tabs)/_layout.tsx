@@ -7,9 +7,11 @@ import { IconSymbol } from '@/components/ui/IconSymbol';
 import TabBarBackground from '@/components/ui/TabBarBackground';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { useTranslation } from 'react-i18next';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const { t } = useTranslation();
 
   return (
     <Tabs
@@ -29,35 +31,35 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
+          title: t('home'),
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
         }}
       />
       <Tabs.Screen
         name="calendar"
         options={{
-          title: 'Calendar',
+          title: t('calendar'),
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="calendar" color={color} />, // Calendar tab
         }}
       />
       <Tabs.Screen
         name="prayer"
         options={{
-          title: 'Prayer',
+          title: t('prayer'),
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="clock" color={color} />, // Prayer tab
         }}
       />
       <Tabs.Screen
         name="qibla"
         options={{
-          title: 'Qibla',
+          title: t('qibla'),
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="location.north" color={color} />,
         }}
       />
       <Tabs.Screen
         name="masjids"
         options={{
-          title: 'Masjids',
+          title: t('masjids'),
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="mappin" color={color} />,
         }}
       />

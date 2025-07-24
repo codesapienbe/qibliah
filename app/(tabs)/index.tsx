@@ -33,7 +33,7 @@ const INITIAL_MESSAGES = [
 ];
 
 export default function HomeScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [messages, setMessages, messagesLoading] = useAssistantMessages([
     { ...INITIAL_MESSAGES[0], text: t('assistant_welcome') },
   ]);
@@ -61,6 +61,17 @@ export default function HomeScreen() {
       }
     })();
   }, []);
+
+  React.useEffect(() => {
+    // Update welcome message when language changes
+    setMessages(prev => {
+      if (prev.length > 0 && prev[0].isInitial) {
+        return [{ ...prev[0], text: t('assistant_welcome') }, ...prev.slice(1)];
+      }
+      return prev;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [i18n.language]);
 
   // Remove all pickers and toggles from main view
 

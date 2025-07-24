@@ -101,5 +101,14 @@
   "masjids_directions": "Yol Tarifi",
   "masjids_call": "Ara",
   "masjids_location_permission_denied": "Konuma erişim izni reddedildi. Konumunuzu manuel olarak girebilirsiniz.",
-  "masjids_location_error": "Konum alınamadı. Konumunuzu manuel olarak girebilirsiniz."
+  "masjids_location_error": "Konum alınamadı. Konumunuzu manuel olarak girebilirsiniz.",
+  "theme": "Tema",
+  "system_theme": "Sistem",
+  "light_theme": "Açık",
+  "dark_theme": "Koyu",
+  "groq_api_key": "Groq API Anahtarı",
+  "set_api_key": "API Anahtarı Ayarla",
+  "home": "Ana Sayfa",
+  "prayer": "Namaz",
+  "qibla": "Kıble"
 } 

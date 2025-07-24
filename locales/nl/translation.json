@@ -101,5 +101,14 @@
   "masjids_directions": "Route",
   "masjids_call": "Bellen",
   "masjids_location_permission_denied": "Toestemming voor toegang tot locatie is geweigerd. U kunt uw locatie handmatig invoeren.",
-  "masjids_location_error": "Kon locatie niet ophalen. U kunt uw locatie handmatig invoeren."
+  "masjids_location_error": "Kon locatie niet ophalen. U kunt uw locatie handmatig invoeren.",
+  "theme": "Thema",
+  "system_theme": "Systeem",
+  "light_theme": "Licht",
+  "dark_theme": "Donker",
+  "groq_api_key": "Groq API-sleutel",
+  "set_api_key": "API-sleutel instellen",
+  "home": "Home",
+  "prayer": "Gebed",
+  "qibla": "Qibla"
 } 
