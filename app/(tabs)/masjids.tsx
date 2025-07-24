@@ -4,7 +4,7 @@ import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import * as Location from 'expo-location';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Linking, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Linking, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 // Try to use Slider if available
@@ -109,12 +109,10 @@ export default function MasjidsTab() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Colors[colorScheme].background }}>
-      <View style={{ flex: 1, paddingHorizontal: 16, paddingTop: 16 }}>
-        {/* Header */}
-        <View style={styles.header}>
-          <ThemedText type="title" style={styles.title}>Nearby Masjids</ThemedText>
-          <ThemedText style={[styles.subtitle, { color: Colors[colorScheme].info }]}>Find places to pray near you</ThemedText>
-        </View>
+      <View style={{ paddingTop: 16, paddingBottom: 8, alignItems: 'center' }}>
+        <ThemedText type="title" style={{ fontWeight: 'bold', color: Colors[colorScheme].primary, fontSize: 28 }}>Masjids Nearby</ThemedText>
+      </View>
+      <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 16, paddingTop: 0, backgroundColor: Colors[colorScheme].background }}>
         {/* Distance Filter */}
         {location && (
           <View style={styles.filterRow}>
@@ -231,7 +229,7 @@ export default function MasjidsTab() {
             ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
           />
         )}
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }

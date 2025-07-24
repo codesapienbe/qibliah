@@ -4,7 +4,7 @@ import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import * as Location from 'expo-location';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const KAABA = { lat: 21.4225, lng: 39.8262 };
@@ -73,12 +73,10 @@ export default function QiblaTab() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Colors[colorScheme].background }}>
-      <View style={{ flex: 1, paddingHorizontal: 16, paddingTop: 16 }}>
-        {/* Header */}
-        <View style={styles.header}>
-          <ThemedText type="title" style={styles.title}>Qibla Direction</ThemedText>
-          <ThemedText style={[styles.subtitle, { color: Colors[colorScheme].info }]}>Find the direction to Kaaba in Mecca</ThemedText>
-        </View>
+      <View style={{ paddingTop: 16, paddingBottom: 8, alignItems: 'center' }}>
+        <ThemedText type="title" style={{ fontWeight: 'bold', color: Colors[colorScheme].primary, fontSize: 28 }}>Qibla Direction</ThemedText>
+      </View>
+      <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 16, paddingTop: 0, backgroundColor: Colors[colorScheme].background }}>
         {/* Compass & Info */}
         <View style={styles.compassContainer}>
           <View style={styles.compassWrapper}>
@@ -129,7 +127,7 @@ export default function QiblaTab() {
             </>
           )}
         </ThemedView>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }

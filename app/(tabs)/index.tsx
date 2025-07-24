@@ -1,6 +1,7 @@
 import { askOllama, searchQuran } from '@/api';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import { Colors } from '@/constants/Colors';
 import { useAssistantMessages } from '@/hooks/useAssistantMessages';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { Ionicons } from '@expo/vector-icons';
@@ -10,13 +11,11 @@ import {
   FlatList,
   Image,
   Keyboard,
-  KeyboardAvoidingView,
   Platform,
   SafeAreaView,
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  TouchableWithoutFeedback,
   View
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -150,79 +149,73 @@ export default function HomeScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#f7f7f8' }}>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={12}
-      >
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-          <View style={{ flex: 1, paddingHorizontal: 16, paddingTop: 16 }}>
-            {/* Header */}
-            <View style={styles.header}>
-              <Image source={require('@/assets/images/icon.png')} style={styles.headerLogo} />
-              <ThemedText style={styles.headerTitle}>Quranic AI</ThemedText>
-              <TouchableOpacity style={styles.settingsButton}>
-                <Ionicons name="settings-outline" size={24} color="#222" />
-              </TouchableOpacity>
-            </View>
-            <FlatList
-              ref={flatListRef}
-              data={messages}
-              renderItem={renderItem}
-              keyExtractor={(item) => item.id}
-              contentContainerStyle={styles.chatList}
-              onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
-              onLayout={() => flatListRef.current?.scrollToEnd({ animated: false })}
-              ListFooterComponent={sending ? (
-                <View style={[styles.messageRow, styles.aiRow]}>
-                  {renderAvatar('ai')}
-                  <ThemedView style={[styles.messageBubble, styles.aiBubble]}>
-                    <View style={styles.loadingDotsContainer}>
-                      <View style={[styles.loadingDot, styles.loadingDot1]} />
-                      <View style={[styles.loadingDot, styles.loadingDot2]} />
-                      <View style={[styles.loadingDot, styles.loadingDot3]} />
-                    </View>
-                  </ThemedView>
-                </View>
-              ) : null}
-            />
-            <View style={[styles.inputBarWrapper, { paddingBottom: insets.bottom + 20 }]}>
-              <View style={styles.inputBar}>
-                <TouchableOpacity style={styles.plusButton} onPress={handlePickFile}>
-                  <Ionicons name="add" size={26} color="#2563eb" />
-                </TouchableOpacity>
-                <View style={styles.textInputWrapper}>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Type your message..."
-                    placeholderTextColor="#aaa"
-                    value={input}
-                    onChangeText={setInput}
-                    onSubmitEditing={handleSend}
-                    editable={!sending}
-                    maxLength={500}
-                    returnKeyType="send"
-                    multiline
-                    numberOfLines={3}
-                  />
-                </View>
-                <TouchableOpacity style={styles.micButton} onPress={handleVoiceInput}>
-                  <Ionicons name="mic" size={22} color="#10B981" />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.sendButton, { backgroundColor: input.trim() && !sending ? '#10B981' : '#ccc' }]}
-                  onPress={handleSend}
-                  disabled={!input.trim() || sending}
-                  activeOpacity={0.8}
-                >
-                  <Ionicons name="send" size={20} color="#fff" />
-                </TouchableOpacity>
-              </View>
-            </View>
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors[colorScheme].background }}>
+      <View style={{ paddingTop: 16, paddingBottom: 8, alignItems: 'center' }}>
+        <ThemedText type="title" style={{ fontWeight: 'bold', color: Colors[colorScheme].primary, fontSize: 28 }}>Quranic AI</ThemedText>
+      </View>
+      <FlatList
+        ref={flatListRef}
+        data={messages}
+        renderItem={renderItem}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 16, paddingTop: 0, backgroundColor: Colors[colorScheme].background }}
+        onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+        onLayout={() => flatListRef.current?.scrollToEnd({ animated: false })}
+        ListHeaderComponent={
+          <View style={styles.header}>
+            <Image source={require('@/assets/images/icon.png')} style={styles.headerLogo} />
+            <ThemedText style={styles.headerTitle}>Quranic AI</ThemedText>
+            <TouchableOpacity style={styles.settingsButton}>
+              <Ionicons name="settings-outline" size={24} color="#222" />
+            </TouchableOpacity>
           </View>
-        </TouchableWithoutFeedback>
-      </KeyboardAvoidingView>
+        }
+        ListFooterComponent={sending ? (
+          <View style={[styles.messageRow, styles.aiRow]}>
+            {renderAvatar('ai')}
+            <ThemedView style={[styles.messageBubble, styles.aiBubble]}>
+              <View style={styles.loadingDotsContainer}>
+                <View style={[styles.loadingDot, styles.loadingDot1]} />
+                <View style={[styles.loadingDot, styles.loadingDot2]} />
+                <View style={[styles.loadingDot, styles.loadingDot3]} />
+              </View>
+            </ThemedView>
+          </View>
+        ) : null}
+      />
+      <View style={[styles.inputBarWrapper, { paddingBottom: insets.bottom + 20 }]}>
+        <View style={styles.inputBar}>
+          <TouchableOpacity style={styles.plusButton} onPress={handlePickFile}>
+            <Ionicons name="add" size={26} color="#2563eb" />
+          </TouchableOpacity>
+          <View style={styles.textInputWrapper}>
+            <TextInput
+              style={styles.input}
+              placeholder="Type your message..."
+              placeholderTextColor="#aaa"
+              value={input}
+              onChangeText={setInput}
+              onSubmitEditing={handleSend}
+              editable={!sending}
+              maxLength={500}
+              returnKeyType="send"
+              multiline
+              numberOfLines={3}
+            />
+          </View>
+          <TouchableOpacity style={styles.micButton} onPress={handleVoiceInput}>
+            <Ionicons name="mic" size={22} color="#10B981" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.sendButton, { backgroundColor: input.trim() && !sending ? '#10B981' : '#ccc' }]}
+            onPress={handleSend}
+            disabled={!input.trim() || sending}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="send" size={20} color="#fff" />
+          </TouchableOpacity>
+        </View>
+      </View>
     </SafeAreaView>
   );
 }
