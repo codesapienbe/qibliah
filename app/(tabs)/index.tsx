@@ -1,4 +1,4 @@
-import { askOllama, searchQuran } from '@/api';
+import { askGroq } from '@/api';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Colors } from '@/constants/Colors';
@@ -15,6 +15,7 @@ import {
   Platform,
   SafeAreaView,
   StyleSheet,
+  Switch,
   TextInput,
   TouchableOpacity,
   View
@@ -37,6 +38,12 @@ export default function HomeScreen() {
   const colorScheme = useColorScheme() ?? 'light';
   const flatListRef = useRef<FlatList>(null);
   const insets = useSafeAreaInsets();
+  const [groqApiKey, setGroqApiKey] = useState<string | null>(null);
+  const [showApiKeyPrompt, setShowApiKeyPrompt] = useState(false);
+  const [tempApiKey, setTempApiKey] = useState('');
+  const [rememberChat, setRememberChat] = useState(true);
+  const [showRememberModal, setShowRememberModal] = useState(false);
+  const [pendingRemember, setPendingRemember] = useState(rememberChat);
 
   // Remove all pickers and toggles from main view
 
@@ -67,6 +74,10 @@ export default function HomeScreen() {
 
   const handleSend = async () => {
     if (!input.trim() || sending) return;
+    if (!groqApiKey) {
+      // Optionally, show a toast or error, but do not auto-open modal
+      return;
+    }
     const userMessage = {
       id: `user-${Date.now()}`,
       sender: 'user',
@@ -78,28 +89,21 @@ export default function HomeScreen() {
     setSending(true);
     Keyboard.dismiss();
     let aiMessageText = '';
-    let usedFallback = false;
     try {
-      // Try Quran API first
-      const result = await searchQuran(userMessage.text, 'en');
-      if (result && result.data && result.data.matches && result.data.matches.length > 0) {
-        aiMessageText = result.data.matches.map((m: any) => `${m.text} (Surah ${m.surah.number}:${m.numberInSurah})`).join('\n\n');
+      let chatHistory = [];
+      if (rememberChat) {
+        // Send all previous messages (user/ai) as chat history
+        chatHistory = messages
+          .filter(m => !m.isInitial)
+          .map(m => ({ role: m.sender === 'user' ? 'user' : 'assistant', content: m.text }));
+        chatHistory.push({ role: 'user', content: userMessage.text });
       } else {
-        // Fallback to Ollama if no relevant verses
-        aiMessageText = await askOllama(userMessage.text);
-        usedFallback = true;
+        // Only send the latest user message
+        chatHistory = [{ role: 'user', content: userMessage.text }];
       }
+      aiMessageText = await askGroq(userMessage.text, groqApiKey);
     } catch (err: any) {
-      // Quran API failed, fallback to Ollama
-      try {
-        aiMessageText = await askOllama(userMessage.text);
-        usedFallback = true;
-      } catch (ollamaErr: any) {
-        aiMessageText = ollamaErr.message || 'An error occurred.';
-      }
-    }
-    if (!aiMessageText) {
-      aiMessageText = usedFallback ? 'No response from Ollama.' : 'No relevant Quranic verses found.';
+      aiMessageText = err.message || 'An error occurred.';
     }
     const aiMessage = {
       id: `ai-${Date.now()}`,
@@ -149,11 +153,95 @@ export default function HomeScreen() {
     );
   };
 
+  // Add a modal or prompt for API key
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Colors[colorScheme].background }}>
-      <View style={{ paddingTop: 16, paddingBottom: 8, alignItems: 'center' }}>
-        <ThemedText type="title" style={{ fontWeight: 'bold', color: Colors[colorScheme].primary, fontSize: 28 }}>Quranic AI</ThemedText>
+      <View style={{ paddingTop: 16, paddingBottom: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+        <TouchableOpacity style={{ position: 'absolute', left: 16, top: 16, zIndex: 2 }} onPress={() => { setPendingRemember(rememberChat); setShowRememberModal(true); }}>
+          <Ionicons name={rememberChat ? 'bulb' : 'bulb-outline'} size={26} color={Colors[colorScheme].primary} />
+        </TouchableOpacity>
+        <ThemedText type="title" style={{ fontWeight: 'bold', color: Colors[colorScheme].primary, fontSize: 28, marginHorizontal: 56, textAlign: 'center', flex: 1 }}>Quranic AI</ThemedText>
+        <View style={{ flexDirection: 'row', position: 'absolute', right: 16, top: 16, zIndex: 2 }}>
+          <TouchableOpacity style={{ marginRight: 16 }} onPress={() => setMessages(INITIAL_MESSAGES)}>
+            <Ionicons name="trash-outline" size={26} color={Colors[colorScheme].primary} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => setShowApiKeyPrompt(true)}>
+            <Ionicons name="settings-outline" size={28} color={Colors[colorScheme].primary} />
+          </TouchableOpacity>
+        </View>
       </View>
+      {/* Remember Chat Modal */}
+      {showRememberModal && (
+        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.4)', zIndex: 100, justifyContent: 'center', alignItems: 'center' }}>
+          <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 24, width: '80%', alignItems: 'center' }}>
+            <ThemedText style={{ fontWeight: 'bold', fontSize: 18, marginBottom: 12, color: Colors[colorScheme].primary }}>Conversation Memory</ThemedText>
+            <ThemedText style={{ color: '#374151', fontSize: 15, textAlign: 'center', marginBottom: 16 }}>
+              When activated, the AI will remember your full chat history for better context. When off, only your latest message is sent.
+            </ThemedText>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
+              <ThemedText style={{ fontSize: 16, marginRight: 10, color: Colors[colorScheme].primary }}>Remember Chat</ThemedText>
+              <Switch
+                value={pendingRemember}
+                onValueChange={setPendingRemember}
+                thumbColor={pendingRemember ? Colors[colorScheme].primary : '#ccc'}
+                trackColor={{ true: Colors[colorScheme].primary, false: '#ccc' }}
+              />
+            </View>
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              <TouchableOpacity
+                style={{ backgroundColor: Colors[colorScheme].primary, borderRadius: 8, paddingVertical: 8, paddingHorizontal: 18 }}
+                onPress={() => { setRememberChat(pendingRemember); setShowRememberModal(false); }}
+              >
+                <ThemedText style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Save</ThemedText>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={{ backgroundColor: '#eee', borderRadius: 8, paddingVertical: 8, paddingHorizontal: 18 }}
+                onPress={() => setShowRememberModal(false)}
+              >
+                <ThemedText style={{ color: Colors[colorScheme].primary, fontWeight: 'bold', fontSize: 16 }}>Cancel</ThemedText>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )}
+      {/* API Key Prompt Modal */}
+      {showApiKeyPrompt && (
+        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.4)', zIndex: 100, justifyContent: 'center', alignItems: 'center' }}>
+          <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 24, width: '80%', alignItems: 'center' }}>
+            <ThemedText style={{ fontWeight: 'bold', fontSize: 18, marginBottom: 12, color: Colors[colorScheme].primary }}>Enter Groq API Key</ThemedText>
+            <TextInput
+              style={{ borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 10, width: '100%', marginBottom: 16, fontSize: 16 }}
+              placeholder="sk-..."
+              value={tempApiKey}
+              onChangeText={setTempApiKey}
+              autoCapitalize="none"
+              autoCorrect={false}
+              secureTextEntry
+            />
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              <TouchableOpacity
+                style={{ backgroundColor: Colors[colorScheme].primary, borderRadius: 8, paddingVertical: 8, paddingHorizontal: 18 }}
+                onPress={() => {
+                  setGroqApiKey(tempApiKey);
+                  setShowApiKeyPrompt(false);
+                  setTempApiKey('');
+                }}
+              >
+                <ThemedText style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Save</ThemedText>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={{ backgroundColor: '#eee', borderRadius: 8, paddingVertical: 8, paddingHorizontal: 18 }}
+                onPress={() => {
+                  setShowApiKeyPrompt(false);
+                  setTempApiKey('');
+                }}
+              >
+                <ThemedText style={{ color: Colors[colorScheme].primary, fontWeight: 'bold', fontSize: 16 }}>Cancel</ThemedText>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )}
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -168,13 +256,7 @@ export default function HomeScreen() {
           onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
           onLayout={() => flatListRef.current?.scrollToEnd({ animated: false })}
           ListHeaderComponent={
-            <View style={styles.header}>
-              <Image source={require('@/assets/images/icon.png')} style={styles.headerLogo} />
-              <ThemedText style={styles.headerTitle}>Quranic AI</ThemedText>
-              <TouchableOpacity style={styles.settingsButton}>
-                <Ionicons name="settings-outline" size={24} color="#222" />
-              </TouchableOpacity>
-            </View>
+            undefined
           }
           ListFooterComponent={sending ? (
             <View style={[styles.messageRow, styles.aiRow]}>

@@ -36,4 +36,68 @@ export async function askOllama(message: string, endpoint: string = 'http://loca
   } catch (error: any) {
     throw new Error('Ollama API error: ' + error.message);
   }
+}
+
+/**
+ * Send a message to Groq's LLM API and get a response.
+ * @param {string} message - The user message/question.
+ * @param {string} apiKey - Your Groq API key.
+ * @param {string} [model='mixtral-8x7b-32768'] - Groq model to use (default: mixtral-8x7b-32768).
+ * @returns {Promise<string>} - LLM response text.
+ */
+export async function askGroq(message: string, apiKey: string, model: string = 'qwen/qwen3-32b'): Promise<string> {
+  try {
+    const response = await axios.post(
+      'https://api.groq.com/openai/v1/chat/completions',
+      {
+        model,
+        messages: [
+          { role: 'system', content: 'You are a helpful Islamic assistant. Answer with references to Quran and Hadith when possible.' },
+          { role: 'user', content: message }
+        ],
+        max_tokens: 512,
+        temperature: 0.7
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    // Groq returns OpenAI-compatible response
+    return response.data.choices[0].message.content.trim();
+  } catch (error: any) {
+    throw new Error('Groq API error: ' + (error.response?.data?.error?.message || error.message));
+  }
+}
+
+/**
+ * Send a chat history to Groq's LLM API and get a response.
+ * @param {Array<{role: string, content: string}>} chatHistory - The chat history as OpenAI-style messages.
+ * @param {string} apiKey - Your Groq API key.
+ * @param {string} [model='qwen/qwen3-32b'] - Groq model to use.
+ * @returns {Promise<string>} - LLM response text.
+ */
+export async function askGroqWithHistory(chatHistory: Array<{role: string, content: string}>, apiKey: string, model: string = 'qwen/qwen3-32b'): Promise<string> {
+  try {
+    const response = await axios.post(
+      'https://api.groq.com/openai/v1/chat/completions',
+      {
+        model,
+        messages: chatHistory,
+        max_tokens: 512,
+        temperature: 0.7
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    return response.data.choices[0].message.content.trim();
+  } catch (error: any) {
+    throw new Error('Groq API error: ' + (error.response?.data?.error?.message || error.message));
+  }
 } 
