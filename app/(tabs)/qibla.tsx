@@ -269,7 +269,8 @@ export default function QiblaTab() {
                       styles.directionValue, 
                       { color: isNearQibla ? '#10B981' : '#F59E0B' }
                     ]}>
-                      {qiblaDegrees}°
+                      {qiblaDegrees}
+                      <Text style={{fontSize: 32}}>°</Text>
                     </ThemedText>
                     {isNearQibla && (
                       <ThemedText style={[styles.alignedText, { color: '#10B981' }]}>
@@ -319,19 +320,22 @@ export default function QiblaTab() {
                   <View style={[styles.locationRow, { borderBottomColor: Colors[colorScheme].cardBorder }]}>
                     <ThemedText style={{ color: Colors[colorScheme].text }}>Your Location:</ThemedText>
                     <ThemedText style={{ color: Colors[colorScheme].text, fontFamily: 'monospace' }}>
-                      {coordsStr}
+                      {coordsStr ? <Text>{coordsStr}</Text> : null}
                     </ThemedText>
                   </View>
                   <View style={[styles.locationRow, { borderBottomColor: Colors[colorScheme].cardBorder }]}>
                     <ThemedText style={{ color: Colors[colorScheme].text }}>Distance to Mecca:</ThemedText>
                     <ThemedText style={{ color: Colors[colorScheme].text, fontWeight: 'bold' }}>
-                      {distance}
+                      {distance ? <Text>{distance}</Text> : null}
                     </ThemedText>
                   </View>
                   <View style={[styles.locationRow, { borderBottomWidth: 0 }]}>
                     <ThemedText style={{ color: Colors[colorScheme].text }}>Kaaba (Mecca):</ThemedText>
                     <ThemedText style={{ color: Colors[colorScheme].text, fontFamily: 'monospace' }}>
-                      {KAABA.lat.toFixed(4)}°N, {KAABA.lng.toFixed(4)}°E
+                      {KAABA.lat.toFixed(4)}
+                      <Text style={{fontSize: 14}}>°N, </Text>
+                      {KAABA.lng.toFixed(4)}
+                      <Text style={{fontSize: 14}}>°E</Text>
                     </ThemedText>
                   </View>
                 </>

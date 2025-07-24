@@ -4,7 +4,7 @@ import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import * as Location from 'expo-location';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Linking, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Linking, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 // Try to use Slider if available
@@ -189,124 +189,126 @@ export default function MasjidsTab() {
       <View style={{ paddingTop: 16, paddingBottom: 8, alignItems: 'center' }}>
         <ThemedText type="title" style={{ fontWeight: 'bold', color: Colors[colorScheme].primary, fontSize: 28 }}>Masjids Nearby</ThemedText>
       </View>
-      <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 16, paddingTop: 0, backgroundColor: Colors[colorScheme].background }}>
-        {/* Distance Filter */}
-        {effectiveLocation && (
-          <View style={styles.filterRow}>
-            <ThemedText style={{ marginRight: 8 }}>Within</ThemedText>
-            {Slider ? (
-              <Slider
-                style={{ flex: 1, marginHorizontal: 8 }}
-                minimumValue={1}
-                maximumValue={50}
-                step={1}
-                value={maxDistance}
-                onValueChange={setMaxDistance}
-                minimumTrackTintColor={Colors[colorScheme].primary}
-                maximumTrackTintColor="#ccc"
-                thumbTintColor={Colors[colorScheme].primary}
-              />
-            ) : (
-              <View style={{ flexDirection: 'row', gap: 8 }}>
-                {[1, 2, 5, 10, 20, 30, 50].map((d) => (
-                  <TouchableOpacity
-                    key={d}
-                    style={[styles.filterBtn, maxDistance === d && styles.filterBtnActive]}
-                    onPress={() => setMaxDistance(d)}
-                  >
-                    <Text style={{ color: maxDistance === d ? '#fff' : '#333' }}>{d} km</Text>
-                  </TouchableOpacity>
-                ))}
+      <FlatList
+        data={loading || errorMsg ? [] : filteredMasjids}
+        keyExtractor={(item) => item.id.toString()}
+        contentContainerStyle={styles.list}
+        ListHeaderComponent={
+          <>
+            {/* Distance Filter */}
+            {effectiveLocation && (
+              <View style={styles.filterRow}>
+                <ThemedText style={{ marginRight: 8 }}>Within</ThemedText>
+                {Slider ? (
+                  <Slider
+                    style={{ flex: 1, marginHorizontal: 8 }}
+                    minimumValue={1}
+                    maximumValue={50}
+                    step={1}
+                    value={maxDistance}
+                    onValueChange={setMaxDistance}
+                    minimumTrackTintColor={Colors[colorScheme].primary}
+                    maximumTrackTintColor="#ccc"
+                    thumbTintColor={Colors[colorScheme].primary}
+                  />
+                ) : (
+                  <View style={{ flexDirection: 'row', gap: 8 }}>
+                    {[1, 2, 5, 10, 20, 30, 50].map((d) => (
+                      <TouchableOpacity
+                        key={d}
+                        style={[styles.filterBtn, maxDistance === d && styles.filterBtnActive]}
+                        onPress={() => setMaxDistance(d)}
+                      >
+                        <Text style={{ color: maxDistance === d ? '#fff' : '#333' }}>{d} km</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+                <ThemedText style={{ marginLeft: 8 }}>{maxDistance} km</ThemedText>
               </View>
             )}
-            <ThemedText style={{ marginLeft: 8 }}>{maxDistance} km</ThemedText>
-          </View>
-        )}
-        {/* Map View */}
-        {effectiveLocation && (
-          <MapView
-            style={styles.map}
-            initialRegion={{
-              latitude: effectiveLocation.lat,
-              longitude: effectiveLocation.lng,
-              latitudeDelta: 0.08,
-              longitudeDelta: 0.08,
-            }}
-            showsUserLocation={true}
-            showsMyLocationButton={Platform.OS === 'android'}
-          >
-            <Marker
-              coordinate={{ latitude: effectiveLocation.lat, longitude: effectiveLocation.lng }}
-              title="You"
-              pinColor={Colors[colorScheme].primary}
-            />
-            {filteredMasjids.map((m) => (
-              <Marker
-                key={m.id}
-                coordinate={{ latitude: m.coordinates[0], longitude: m.coordinates[1] }}
-                title={m.name}
-                description={m.address}
-                pinColor={Colors[colorScheme].secondary}
-              />
-            ))}
-          </MapView>
-        )}
-        {/* No masjids found label */}
-        {effectiveLocation && !loading && !errorMsg && filteredMasjids.length === 0 && (
-          <View style={{ alignItems: 'center', marginVertical: 16 }}>
-            <ThemedText style={{ color: Colors[colorScheme].warning, fontWeight: 'bold' }}>
-              No masjids found within {maxDistance} km.
-            </ThemedText>
-          </View>
-        )}
-        {/* Masjid List */}
-        {loading ? (
-          <View style={{ alignItems: 'center', padding: 16 }}>
-            <ActivityIndicator size="small" color={Colors[colorScheme].primary} />
-            <ThemedText style={{ marginTop: 8 }}>Getting your location...</ThemedText>
-          </View>
-        ) : errorMsg ? (
-          <View style={{ alignItems: 'center', padding: 16 }}>
-            <ThemedText style={{ color: Colors[colorScheme].error }}>{errorMsg}</ThemedText>
-          </View>
-        ) : (
-          <FlatList
-            data={filteredMasjids}
-            keyExtractor={(item) => item.id.toString()}
-            contentContainerStyle={styles.list}
-            renderItem={({ item }) => (
-              <ThemedView style={styles.masjidCard}>
-                <View style={styles.masjidHeader}>
-                  <View style={styles.masjidInfo}>
-                    <ThemedText style={styles.masjidName}>{item.name}</ThemedText>
-                    <ThemedText style={styles.masjidAddress}>{item.address}</ThemedText>
-                  </View>
-                  <ThemedText style={styles.masjidDistance}>
-                    {item.distance != null ? `${item.distance.toFixed(1)} km` : '--'}
-                  </ThemedText>
-                </View>
-                <View style={styles.masjidActions}>
-                  <TouchableOpacity
-                    style={styles.actionBtn}
-                    onPress={() => openDirections(item.coordinates[0], item.coordinates[1])}
-                    activeOpacity={0.8}
-                  >
-                    <ThemedText style={styles.actionBtnText}>Directions</ThemedText>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.actionBtn, styles.secondaryBtn]}
-                    onPress={openCall}
-                    activeOpacity={0.8}
-                  >
-                    <ThemedText style={[styles.actionBtnText, styles.secondaryBtnText]}>Call</ThemedText>
-                  </TouchableOpacity>
-                </View>
-              </ThemedView>
+            {/* Map View */}
+            {effectiveLocation && (
+              <MapView
+                style={styles.map}
+                initialRegion={{
+                  latitude: effectiveLocation.lat,
+                  longitude: effectiveLocation.lng,
+                  latitudeDelta: 0.08,
+                  longitudeDelta: 0.08,
+                }}
+                showsUserLocation={true}
+                showsMyLocationButton={Platform.OS === 'android'}
+              >
+                <Marker
+                  coordinate={{ latitude: effectiveLocation.lat, longitude: effectiveLocation.lng }}
+                  title="You"
+                  pinColor={Colors[colorScheme].primary}
+                />
+                {filteredMasjids.map((m) => (
+                  <Marker
+                    key={m.id}
+                    coordinate={{ latitude: m.coordinates[0], longitude: m.coordinates[1] }}
+                    title={m.name}
+                    description={m.address}
+                    pinColor={Colors[colorScheme].secondary}
+                  />
+                ))}
+              </MapView>
             )}
-            ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
-          />
+            {/* No masjids found label */}
+            {effectiveLocation && !loading && !errorMsg && filteredMasjids.length === 0 && (
+              <View style={{ alignItems: 'center', marginVertical: 16 }}>
+                <ThemedText style={{ color: Colors[colorScheme].warning, fontWeight: 'bold' }}>
+                  No masjids found within {maxDistance} km.
+                </ThemedText>
+              </View>
+            )}
+            {/* Loading/Error States */}
+            {loading ? (
+              <View style={{ alignItems: 'center', padding: 16 }}>
+                <ActivityIndicator size="small" color={Colors[colorScheme].primary} />
+                <ThemedText style={{ marginTop: 8 }}>Getting your location...</ThemedText>
+              </View>
+            ) : errorMsg ? (
+              <View style={{ alignItems: 'center', padding: 16 }}>
+                <ThemedText style={{ color: Colors[colorScheme].error }}>{errorMsg}</ThemedText>
+              </View>
+            ) : null}
+          </>
+        }
+        renderItem={({ item }) => (
+          <ThemedView style={styles.masjidCard}>
+            <View style={styles.masjidHeader}>
+              <View style={styles.masjidInfo}>
+                <ThemedText style={styles.masjidName}>{item.name}</ThemedText>
+                <ThemedText style={styles.masjidAddress}>{item.address}</ThemedText>
+              </View>
+              <ThemedText style={styles.masjidDistance}>
+                {item.distance != null ? `${item.distance.toFixed(1)} km` : '--'}
+              </ThemedText>
+            </View>
+            <View style={styles.masjidActions}>
+              <TouchableOpacity
+                style={styles.actionBtn}
+                onPress={() => openDirections(item.coordinates[0], item.coordinates[1])}
+                activeOpacity={0.8}
+              >
+                <ThemedText style={styles.actionBtnText}>Directions</ThemedText>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.actionBtn, styles.secondaryBtn]}
+                onPress={openCall}
+                activeOpacity={0.8}
+              >
+                <ThemedText style={[styles.actionBtnText, styles.secondaryBtnText]}>Call</ThemedText>
+              </TouchableOpacity>
+            </View>
+          </ThemedView>
         )}
-      </ScrollView>
+        ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
+        ListEmptyComponent={null}
+      />
     </SafeAreaView>
   );
 }
