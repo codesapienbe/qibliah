@@ -1,0 +1,160 @@
+---
+alwaysApply: true
+---
+
+# Cursor IDE Rules for React Native Islamic Prayer App
+
+To maintain app logic consistency while developing in Cursor IDE (especially when collaborating or scaling), here’s a recommended set of Cursor rules and conventions. These rules are tailored for a React Native–first workflow, ensuring your logic and architecture remain robust and unchanged during refactors or UI updates.
+
+## 1. **File & Directory Structure**
+
+- Group by feature: Each core feature (AI Assistant, Prayer Times, Qibla, Masjid Locator) gets its own directory.
+- Keep shared utility logic (API clients, date utilities, hooks) in `/src/utils` or `/src/hooks`.
+- Isolate presentation from logic: Place UI components in `/components` and state management/hooks in `/hooks` or `/store`.
+
+## 2. **Architectural Patterns**
+
+- Use **function components** with React Hooks only—prohibit class components.
+- Side effects, such as fetching location or prayer times, must always be inside `useEffect` hooks or handled through clean custom hooks.
+- No direct logic in JSX trees: All calculations and manipulations must occur outside render return blocks.
+
+## 3. **State Management, Data, and Mutations**
+
+- For non-global state: Use `useState`, `useReducer`, or `useContext` for feature/module scoped state only.
+- For shared/global state (e.g., prayer times, reminders): Use a state management library such as Zustand or Context API but never share logic between unrelated features.
+- No direct state mutation—always use provided setters (`setState` analogs).
+
+## 4. **Business Logic Isolation**
+
+- All computational logic (calculating next prayer, countdown math, qibla angles) must be extracted into pure functions:
+    - Place inside `/utils` or respective feature subfolders.
+    - No business logic inline in components.
+- Unit tests must be written for every utility function—put tests next to implementation with `.test.js` or `.spec.js` suffix.
+
+## 5. **Hooks and Side-Effects**
+
+- All code using `navigator.geolocation`, `PermissionsAndroid`, or device APIs must be placed in custom hooks (e.g., `useLocation`, `useQiblaDirection`).
+- Timer intervals for countdown, qibla animation, etc., live only inside custom hooks, not directly in components.
+
+## 6. **Presentation Layer**
+
+- “Dumb” presentational components: Accept props only—no local state or business logic.
+- Styling: Use StyleSheet API or a consistent styling solution (e.g., Tailwind-RN); avoid inline styles.
+- Glassmorphic effects should be via shared utility styles/components.
+
+## 7. **Navigation and Routing**
+
+- Only use React Navigation.
+- Define route params/interfaces in `/navigation/types.ts`.
+- No conditional navigation or business logic in navigation configs.
+
+## 8. **Reminders, Notifications, and Sound**
+
+- All notification logic must go in a `/services/notifications.ts` file.
+- Interactions with Sound (Adhan) APIs should be abstracted into `/services/audio.ts`.
+- UI components trigger service functions by calling clearly named prop methods (e.g., `onToggleReminder`).
+
+## 9. **Constants and Configurations**
+
+- All static config (prayer calculation methods, colors, icons, etc.) must be separated in `/constants`.
+- No hard-coded values within logic files or UI components.
+
+## 10. **Platform and Device Checks**
+
+- For any iOS/Android divergence, isolate with platform selectors (`Platform.OS`) in a `/platform` utility—not spread throughout components.
+
+## 11. **PWA & React Native Synergy**
+
+- Abstract file storage, network requests, and device-specific access in a `/platform` or `/services` layer for easy web/native replacement.
+
+## 12. **Prohibited Patterns**
+
+| Rule                              | Description                                          |
+|------------------------------------|------------------------------------------------------|
+| No inline logic in JSX             | Only expressions, never assignments or logic blocks  |
+| No direct access to device APIs    | Always go through a custom hook                      |
+| No global mutable variables        | State must be reactive/localized to a store or hook  |
+| No magic numbers or strings        | Always use named constants from `/constants`         |
+| No duplicate logic                 | Extract to shared utilities as needed                |
+
+**Summary:**  
+Adhering to these rules will help keep your app logic modular, testable, and resilient to future UI changes or React Native ↔️ Web codebase migration. These conventions map directly to Cursor’s collaboration model and will safeguard logic integrity as you grow or onboard contributors.
+
+# Cursor IDE Rules for React Native Islamic Prayer App
+
+To maintain app logic consistency while developing in Cursor IDE (especially when collaborating or scaling), here’s a recommended set of Cursor rules and conventions. These rules are tailored for a React Native–first workflow, ensuring your logic and architecture remain robust and unchanged during refactors or UI updates.
+
+## 1. **File & Directory Structure**
+
+- Group by feature: Each core feature (AI Assistant, Prayer Times, Qibla, Masjid Locator) gets its own directory.
+- Keep shared utility logic (API clients, date utilities, hooks) in `/src/utils` or `/src/hooks`.
+- Isolate presentation from logic: Place UI components in `/components` and state management/hooks in `/hooks` or `/store`.
+
+## 2. **Architectural Patterns**
+
+- Use **function components** with React Hooks only—prohibit class components.
+- Side effects, such as fetching location or prayer times, must always be inside `useEffect` hooks or handled through clean custom hooks.
+- No direct logic in JSX trees: All calculations and manipulations must occur outside render return blocks.
+
+## 3. **State Management, Data, and Mutations**
+
+- For non-global state: Use `useState`, `useReducer`, or `useContext` for feature/module scoped state only.
+- For shared/global state (e.g., prayer times, reminders): Use a state management library such as Zustand or Context API but never share logic between unrelated features.
+- No direct state mutation—always use provided setters (`setState` analogs).
+
+## 4. **Business Logic Isolation**
+
+- All computational logic (calculating next prayer, countdown math, qibla angles) must be extracted into pure functions:
+    - Place inside `/utils` or respective feature subfolders.
+    - No business logic inline in components.
+- Unit tests must be written for every utility function—put tests next to implementation with `.test.js` or `.spec.js` suffix.
+
+## 5. **Hooks and Side-Effects**
+
+- All code using `navigator.geolocation`, `PermissionsAndroid`, or device APIs must be placed in custom hooks (e.g., `useLocation`, `useQiblaDirection`).
+- Timer intervals for countdown, qibla animation, etc., live only inside custom hooks, not directly in components.
+
+## 6. **Presentation Layer**
+
+- “Dumb” presentational components: Accept props only—no local state or business logic.
+- Styling: Use StyleSheet API or a consistent styling solution (e.g., Tailwind-RN); avoid inline styles.
+- Glassmorphic effects should be via shared utility styles/components.
+
+## 7. **Navigation and Routing**
+
+- Only use React Navigation.
+- Define route params/interfaces in `/navigation/types.ts`.
+- No conditional navigation or business logic in navigation configs.
+
+## 8. **Reminders, Notifications, and Sound**
+
+- All notification logic must go in a `/services/notifications.ts` file.
+- Interactions with Sound (Adhan) APIs should be abstracted into `/services/audio.ts`.
+- UI components trigger service functions by calling clearly named prop methods (e.g., `onToggleReminder`).
+
+## 9. **Constants and Configurations**
+
+- All static config (prayer calculation methods, colors, icons, etc.) must be separated in `/constants`.
+- No hard-coded values within logic files or UI components.
+
+## 10. **Platform and Device Checks**
+
+- For any iOS/Android divergence, isolate with platform selectors (`Platform.OS`) in a `/platform` utility—not spread throughout components.
+
+## 11. **PWA & React Native Synergy**
+
+- Abstract file storage, network requests, and device-specific access in a `/platform` or `/services` layer for easy web/native replacement.
+
+## 12. **Prohibited Patterns**
+
+| Rule                              | Description                                          |
+|------------------------------------|------------------------------------------------------|
+| No inline logic in JSX             | Only expressions, never assignments or logic blocks  |
+| No direct access to device APIs    | Always go through a custom hook                      |
+| No global mutable variables        | State must be reactive/localized to a store or hook  |
+| No magic numbers or strings        | Always use named constants from `/constants`         |
+| No duplicate logic                 | Extract to shared utilities as needed                |
+
+**Summary:**  
+Adhering to these rules will help keep your app logic modular, testable, and resilient to future UI changes or React Native ↔️ Web codebase migration. These conventions map directly to Cursor’s collaboration model and will safeguard logic integrity as you grow or onboard contributors.
+

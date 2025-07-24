@@ -34,10 +34,31 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="prayer"
         options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+          title: 'Prayer',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="clock" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="calendar"
+        options={{
+          title: 'Calendar',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="calendar" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="qibla"
+        options={{
+          title: 'Qibla',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="location.north" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="masjids"
+        options={{
+          title: 'Masjids',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="mappin" color={color} />,
         }}
       />
     </Tabs>
