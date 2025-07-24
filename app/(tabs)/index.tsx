@@ -4,12 +4,12 @@ import { ThemedView } from '@/components/ThemedView';
 import { Colors } from '@/constants/Colors';
 import { useAssistantMessages } from '@/hooks/useAssistantMessages';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { deleteGroqToken, getGroqToken, saveGroqToken } from '@/utils/tokenStorage';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import React, { useRef, useState } from 'react';
 import {
   FlatList,
-  Image,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
@@ -41,9 +41,22 @@ export default function HomeScreen() {
   const [groqApiKey, setGroqApiKey] = useState<string | null>(null);
   const [showApiKeyPrompt, setShowApiKeyPrompt] = useState(false);
   const [tempApiKey, setTempApiKey] = useState('');
+  const [showingMasked, setShowingMasked] = useState(true);
   const [rememberChat, setRememberChat] = useState(true);
   const [showRememberModal, setShowRememberModal] = useState(false);
   const [pendingRemember, setPendingRemember] = useState(rememberChat);
+
+  React.useEffect(() => {
+    // Load Groq API token from secure storage on mount
+    (async () => {
+      const storedToken = await getGroqToken();
+      if (storedToken) {
+        setGroqApiKey(storedToken);
+        setTempApiKey('************');
+        setShowingMasked(true);
+      }
+    })();
+  }, []);
 
   // Remove all pickers and toggles from main view
 
@@ -102,6 +115,8 @@ export default function HomeScreen() {
         chatHistory = [{ role: 'user', content: userMessage.text }];
       }
       aiMessageText = await askGroq(userMessage.text, groqApiKey);
+      // Remove <think>...</think> tags from the AI response
+      aiMessageText = aiMessageText.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
     } catch (err: any) {
       aiMessageText = err.message || 'An error occurred.';
     }
@@ -212,19 +227,32 @@ export default function HomeScreen() {
             <TextInput
               style={{ borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 10, width: '100%', marginBottom: 16, fontSize: 16 }}
               placeholder="sk-..."
-              value={tempApiKey}
-              onChangeText={setTempApiKey}
+              value={showingMasked && groqApiKey ? '************' : tempApiKey}
+              onChangeText={text => {
+                setTempApiKey(text);
+                setShowingMasked(false);
+              }}
               autoCapitalize="none"
               autoCorrect={false}
               secureTextEntry
+              onFocus={() => {
+                if (showingMasked && groqApiKey) {
+                  setTempApiKey('');
+                  setShowingMasked(false);
+                }
+              }}
             />
             <View style={{ flexDirection: 'row', gap: 12 }}>
               <TouchableOpacity
                 style={{ backgroundColor: Colors[colorScheme].primary, borderRadius: 8, paddingVertical: 8, paddingHorizontal: 18 }}
-                onPress={() => {
-                  setGroqApiKey(tempApiKey);
+                onPress={async () => {
+                  if (!showingMasked || !groqApiKey) {
+                    setGroqApiKey(tempApiKey);
+                    await saveGroqToken(tempApiKey);
+                  }
                   setShowApiKeyPrompt(false);
                   setTempApiKey('');
+                  setShowingMasked(true);
                 }}
               >
                 <ThemedText style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Save</ThemedText>
@@ -234,10 +262,25 @@ export default function HomeScreen() {
                 onPress={() => {
                   setShowApiKeyPrompt(false);
                   setTempApiKey('');
+                  setShowingMasked(true);
                 }}
               >
                 <ThemedText style={{ color: Colors[colorScheme].primary, fontWeight: 'bold', fontSize: 16 }}>Cancel</ThemedText>
               </TouchableOpacity>
+              {groqApiKey && (
+                <TouchableOpacity
+                  style={{ backgroundColor: '#f87171', borderRadius: 8, paddingVertical: 8, paddingHorizontal: 18 }}
+                  onPress={async () => {
+                    await deleteGroqToken();
+                    setGroqApiKey(null);
+                    setTempApiKey('');
+                    setShowApiKeyPrompt(false);
+                    setShowingMasked(true);
+                  }}
+                >
+                  <ThemedText style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Remove API Key</ThemedText>
+                </TouchableOpacity>
+              )}
             </View>
           </View>
         </View>
