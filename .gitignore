@@ -6,6 +6,9 @@ node_modules/
 .env
 .env.local
 
+ios/
+android/
+
 # Expo
 .expo/
 dist/
