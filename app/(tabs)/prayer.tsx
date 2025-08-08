@@ -3,7 +3,6 @@ import { Colors } from '@/constants/Colors';
 import { PrayerKey } from '@/constants/Prayer';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { usePrayerTimes } from '@/hooks/usePrayerTimes';
-import { playAdhan } from '@/services/audio';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, SafeAreaView, ScrollView, Switch, View } from 'react-native';
@@ -32,6 +31,8 @@ export default function PrayerTab() {
   } = usePrayerTimes();
 
   const [showSelection, setShowSelection] = useState<boolean>(false);
+  
+  // Only show selection if permission is denied AND no timezone is chosen
   useEffect(() => {
     setShowSelection(permissionDenied && !timezoneChosen);
   }, [permissionDenied, timezoneChosen]);
@@ -129,18 +130,16 @@ export default function PrayerTab() {
         <View style={{ marginHorizontal: 16, marginTop: 16, padding: 14, backgroundColor: Colors[colorScheme].surface, borderRadius: 14 }}>
           <ThemedText style={{ color: Colors[colorScheme].primary, fontWeight: 'bold', fontSize: 16, marginBottom: 8 }}>{t('reminders')}</ThemedText>
           <ThemedText style={{ color: Colors[colorScheme].text, marginBottom: 8 }}>{t('toggle_reminders_info', { defaultValue: 'Enable or disable reminders per prayer above.' })}</ThemedText>
-          <Pressable
-            onPress={() => setShowSelection(true)}
-            style={{ alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 8, backgroundColor: Colors[colorScheme].surface, borderRadius: 8, borderWidth: 1, borderColor: Colors[colorScheme].cardBorder, marginBottom: 8 }}
-          >
-            <ThemedText style={{ color: Colors[colorScheme].text }}>{t('change_location_timezone', { defaultValue: 'Change Location / Timezone' })}</ThemedText>
-          </Pressable>
-          <Pressable
-            onPress={() => playAdhan({ uri: 'https://cdn.islamic.network/adhan/mp3/adhan_makkah.mp3' })}
-            style={{ alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 8, backgroundColor: Colors[colorScheme].primary, borderRadius: 8 }}
-          >
-            <ThemedText style={{ color: Colors[colorScheme].background, fontWeight: 'bold' }}>{t('test_adhan', { defaultValue: 'Test Adhan' })}</ThemedText>
-          </Pressable>
+          
+          {/* Only show the change location/timezone button if timezone is not chosen or permission is denied */}
+          {(!timezoneChosen || permissionDenied) && (
+            <Pressable
+              onPress={() => setShowSelection(true)}
+              style={{ alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 8, backgroundColor: Colors[colorScheme].surface, borderRadius: 8, borderWidth: 1, borderColor: Colors[colorScheme].cardBorder, marginBottom: 8 }}
+            >
+              <ThemedText style={{ color: Colors[colorScheme].text }}>{t('change_location_timezone', { defaultValue: 'Change Location / Timezone' })}</ThemedText>
+            </Pressable>
+          )}
         </View>
         {/* Stats (placeholder) */}
         <View style={{ marginHorizontal: 16, marginTop: 16, padding: 14, backgroundColor: Colors[colorScheme].surface, borderRadius: 14 }}>

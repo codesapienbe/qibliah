@@ -23,7 +23,9 @@
         "NSLocationAlwaysAndWhenInUseUsageDescription": "We use your location to update prayer times and Qibla direction while you use the app.",
         "NSLocationAlwaysUsageDescription": "We use your location to update prayer times and Qibla direction while you use the app.",
         "NSMotionUsageDescription": "Motion data is used to improve the Qibla compass accuracy.",
-        "NSCameraUsageDescription": "The camera may be used for optional features that require image capture."
+        "NSCameraUsageDescription": "The camera may be used for optional features that require image capture.",
+        "NSSpeechRecognitionUsageDescription": "Voice input is used to allow you to speak your messages to the AI assistant instead of typing.",
+        "NSMicrophoneUsageDescription": "We use the microphone to capture your voice for the AI assistant."
       }
     },
     "android": {
@@ -39,9 +41,14 @@
         "ACCESS_BACKGROUND_LOCATION",
         "POST_NOTIFICATIONS",
         "BODY_SENSORS",
-        "CAMERA"
+        "CAMERA",
+        "RECORD_AUDIO"
       ],
-      "package": "com.abuzittinkodyazar.qibliah"
+      "package": "com.abuzittinkodyazar.qibliah",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      }
     },
     "web": {
       "bundler": "metro",

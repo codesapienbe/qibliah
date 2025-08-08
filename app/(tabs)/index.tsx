@@ -497,12 +497,24 @@ export default function HomeScreen() {
               {listening && <ThemedText style={{ color: Colors[colorScheme].primary, fontSize: 12, marginLeft: 4 }}>●</ThemedText>}
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.sendButton, { backgroundColor: input.trim() && !sending ? Colors[colorScheme].primary : Colors[colorScheme].cardBorder }]}
+              style={[
+                styles.sendButton, 
+                { 
+                  backgroundColor: input.trim() && !sending ? Colors[colorScheme].primary : Colors[colorScheme].surface,
+                  borderColor: input.trim() && !sending ? Colors[colorScheme].primary : Colors[colorScheme].cardBorder,
+                  borderWidth: 1,
+                  transform: [{ scale: input.trim() && !sending ? 1 : 0.9 }]
+                }
+              ]}
               onPress={handleSend}
               disabled={!input.trim() || sending}
               activeOpacity={0.8}
             >
-              <Ionicons name="send" size={20} color={Colors[colorScheme].icon} />
+              <Ionicons 
+                name="send" 
+                size={20} 
+                color={input.trim() && !sending ? Colors[colorScheme].background : Colors[colorScheme].text} 
+              />
             </TouchableOpacity>
           </View>
         </View>
@@ -638,6 +650,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 4,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 2,
   },
   loadingDotsContainer: {
     flexDirection: 'row',

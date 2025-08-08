@@ -37,7 +37,6 @@ export default function QiblaTab() {
   } = useLocation();
   const {
     heading,
-    accuracy,
     errorMsg: compassError,
     loading: compassLoading,
     requestPermission: requestCompassPermission,
@@ -81,10 +80,10 @@ export default function QiblaTab() {
 
   // Debug logging
   React.useEffect(() => {
-    if (heading !== null && accuracy) {
-      console.log('Compass - Heading:', heading, '° Accuracy:', accuracy);
+    if (heading !== null) {
+      console.log('Compass - Heading:', heading, '°');
     }
-  }, [heading, accuracy]);
+  }, [heading]);
 
   React.useEffect(() => {
     if (location) {
@@ -170,7 +169,7 @@ export default function QiblaTab() {
             <Ionicons name="checkmark-circle" size={28} color={Colors[colorScheme].icon} />
           </TouchableOpacity>
           <Text style={{ color: Colors[colorScheme].text, marginTop: 20, textAlign: 'center', fontSize: 13 }}>
-            {t('qibla_location_permission_info')}
+            {t('qibla_location_permission_info', { defaultValue: 'Location permission required for automatic detection.' })}
           </Text>
         </View>
       ) : (
@@ -272,11 +271,11 @@ export default function QiblaTab() {
                         {t('qibla_facing_qibla')}
                       </ThemedText>
                     )}
-                    {accuracy && (
+                    {/* accuracy && (
                       <ThemedText style={{ color: Colors[colorScheme].text, fontSize: 12, marginTop: 4 }}>
                         {t('qibla_accuracy', { value: accuracy.toFixed(1) })}
                       </ThemedText>
-                    )}
+                    ) */}
                   </>
                 ) : (
                   <ThemedText style={{ color: Colors[colorScheme].error, fontSize: 16 }}>

@@ -238,7 +238,7 @@ export default function CalendarTab() {
             })}
           </View>
           {/* Word of the Day tied to selected date */}
-          <View style={{ marginHorizontal: 16, marginTop: 12, padding: 14, backgroundColor: Colors[colorScheme].surface, borderRadius: 14, alignItems: 'center' }}>
+          <View style={{ marginHorizontal: 16, marginTop: 4, padding: 14, backgroundColor: Colors[colorScheme].surface, borderRadius: 14, alignItems: 'center' }}>
             <ThemedText style={{ color: Colors[colorScheme].primary, fontWeight: 'bold', fontSize: 16, marginBottom: 4 }}>{t('word_of_the_day')}</ThemedText>
             <ThemedText
               style={{ color: Colors[colorScheme].text, fontSize: 15, textAlign: 'center', alignSelf: 'stretch' }}

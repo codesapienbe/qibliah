@@ -3,7 +3,6 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 const MASJIDS = [
   {
@@ -297,7 +296,7 @@ const MASJIDS = [
   {
     "id": 49,
     "name": "Al Moustakbal",
-    "address": "Rue de l’Avenir 18, 1080 Molenbeek-Saint-Jean (Brussels)",
+    "address": "Rue de l'Avenir 18, 1080 Molenbeek-Saint-Jean (Brussels)",
     "coordinates": null
   },
   {
@@ -385,22 +384,20 @@ export default function MasjidsTab() {
   const initialRegion = computeInitialRegion();
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: Colors[colorScheme].background }}>
-      <MapView
-        style={{ flex: 1 }}
-        initialRegion={initialRegion}
-      >
-        {markers.map((m) => (
-          <Marker
-            key={m.id}
-            coordinate={{ latitude: m.coordinates[0], longitude: m.coordinates[1] }}
-            title={m.name}
-            description={m.address}
-            pinColor={Colors[colorScheme].secondary}
-          />
-        ))}
-      </MapView>
-    </SafeAreaView>
+    <MapView
+      style={{ flex: 1 }}
+      initialRegion={initialRegion}
+    >
+      {markers.map((m) => (
+        <Marker
+          key={m.id}
+          coordinate={{ latitude: m.coordinates[0], longitude: m.coordinates[1] }}
+          title={m.name}
+          description={m.address}
+          pinColor={Colors[colorScheme].secondary}
+        />
+      ))}
+    </MapView>
   );
 }
 

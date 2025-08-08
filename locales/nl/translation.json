@@ -114,5 +114,13 @@
   "qibla": "Qibla",
   "assistant_goodbye": "Ma'a salama! Vrede zij met u. Als u nog iets nodig heeft, laat het gerust weten! 👋",
   "toggle_reminders_info": "Schakel hierboven herinneringen per gebed in of uit.",
-  "test_adhan": "Adhan testen"
+  "test_adhan": "Adhan testen",
+  "select_timezone": "Selecteer tijdzone",
+  "select_location": "Selecteer locatie",
+  "welcome_to_qibliah": "Welkom bij Qibliah",
+  "setup_timezone_location": "Selecteer uw tijdzone en locatie voor nauwkeurige gebedstijden",
+  "continue": "Doorgaan",
+  "close": "Sluiten",
+  "change_location_timezone": "Locatie / Tijdzone wijzigen",
+  "listening": "Luisteren..."
 } 

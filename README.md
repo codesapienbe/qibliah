@@ -37,7 +37,7 @@ I have successfully created a comprehensive Islamic prayer web application that 
 - 🕌 Nearby Masjids Locator
 	•	Curated list of mosques in Belgium area
 	•	Distance calculation and address information
-	•	“Get Directions” functionality for each mosque
+	•	"Get Directions" functionality for each mosque
 	•	Clean card-based layout with mosque details
 	•	Ready for Google Maps integration
 - 🎨 Design Excellence
@@ -71,6 +71,21 @@ I have successfully created a comprehensive Islamic prayer web application that 
 	•	Optimized assets and responsive images
 	•	Progressive enhancement approach
 	•	Accessibility considerations with ARIA labels
+- 🌟 Enhanced User Experience
+	•	Animated Preloader with Logo
+	•	Beautiful splash screen with rotating logo animation
+	•	Automatic timezone detection and storage
+	•	Seamless first-time user onboarding
+	•	Persistent settings across app sessions
+	•	Timezone Selection System
+	•	Intelligent timezone detection and storage
+	•	Location-based timezone suggestions
+	•	Manual timezone override capabilities
+	•	Automatic form hiding when timezone is set
+	•	Multi-language Support
+	•	English, Dutch, and Turkish translations
+	•	Context-aware language detection
+	•	Persistent language preferences
 - 📊 Technical Implementation
 	• Islamic Prayer Calculations
 	•	ISNA method implementation (Islamic Society of North America)

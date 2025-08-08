@@ -1,6 +1,6 @@
+import { logError } from '@/utils/logger';
 import { useEffect, useRef, useState } from 'react';
 import Voice from 'react-native-voice';
-import { logError } from '@/utils/logger';
 
 export function useVoiceInput() {
   const [listening, setListening] = useState(false);

@@ -116,5 +116,13 @@
   "qibla": "Kıble",
   "assistant_goodbye": "Ma'a selâma! Allah'ın selamı üzerinize olsun. Başka bir sorunuz olursa buradayım! 👋",
   "toggle_reminders_info": "Yukarıdan her namaz için hatırlatıcıları etkinleştirin veya devre dışı bırakın.",
-  "test_adhan": "Ezanı Test Et"
+  "test_adhan": "Ezanı Test Et",
+  "select_timezone": "Saat Dilimi Seçin",
+  "select_location": "Konum Seçin",
+  "welcome_to_qibliah": "Qibliah'a Hoşgeldiniz",
+  "setup_timezone_location": "Doğru namaz vakitleri için saat dilimi ve konumunuzu seçin",
+  "continue": "Devam Et",
+  "close": "Kapat",
+  "change_location_timezone": "Konum / Saat Dilimi Değiştir",
+  "listening": "Dinleniyor..."
 } 

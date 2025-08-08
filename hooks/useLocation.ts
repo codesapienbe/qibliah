@@ -1,6 +1,7 @@
 import { logError } from '@/utils/logger';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Location from 'expo-location';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 export function useLocation() {
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -9,6 +10,23 @@ export function useLocation() {
   const [loading, setLoading] = useState(false);
   const [permissionGranted, setPermissionGranted] = useState<boolean | null>(null);
   const [permissionDenied, setPermissionDenied] = useState<boolean>(false);
+
+  // Load manual location from storage on mount
+  useEffect(() => {
+    (async () => {
+      try {
+        const storedLocation = await AsyncStorage.getItem('@manual_location');
+        if (storedLocation) {
+          const parsedLocation = JSON.parse(storedLocation);
+          if (parsedLocation.lat && parsedLocation.lng) {
+            setManualLocation(parsedLocation);
+          }
+        }
+      } catch (error) {
+        // Ignore storage errors
+      }
+    })();
+  }, []);
 
   // Only requests permission, does not fetch location
   const requestPermission = useCallback(async () => {
@@ -78,6 +96,16 @@ export function useLocation() {
     getCurrentLocation();
   };
 
+  // Enhanced setManualLocation that also stores to AsyncStorage
+  const setManualLocationWithStorage = useCallback(async (newLocation: { lat: number; lng: number }) => {
+    setManualLocation(newLocation);
+    try {
+      await AsyncStorage.setItem('@manual_location', JSON.stringify(newLocation));
+    } catch (error) {
+      // Ignore storage errors
+    }
+  }, []);
+
   // Use manual location if provided and permission is denied
   const effectiveLocation = permissionDenied && manualLocation ? manualLocation : location;
 
@@ -90,6 +118,6 @@ export function useLocation() {
     getCurrentLocation,
     permissionGranted,
     permissionDenied,
-    setManualLocation,
+    setManualLocation: setManualLocationWithStorage,
   };
 }

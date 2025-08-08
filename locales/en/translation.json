@@ -118,5 +118,11 @@
   "toggle_reminders_info": "Enable or disable reminders per prayer above.",
   "test_adhan": "Test Adhan",
   "select_timezone": "Select Timezone",
-  "select_location": "Select Location"
+  "select_location": "Select Location",
+  "welcome_to_qibliah": "Welcome to Qibliah",
+  "setup_timezone_location": "Please select your timezone and location to get accurate prayer times",
+  "continue": "Continue",
+  "close": "Close",
+  "change_location_timezone": "Change Location / Timezone",
+  "listening": "Listening..."
 } 
