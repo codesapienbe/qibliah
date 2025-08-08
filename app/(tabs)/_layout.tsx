@@ -43,13 +43,6 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="prayer"
-        options={{
-          title: t('prayer'),
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="clock" color={color} />, // Prayer tab
-        }}
-      />
-      <Tabs.Screen
         name="qibla"
         options={{
           title: t('qibla'),

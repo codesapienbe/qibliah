@@ -1,399 +1,266 @@
-import { getAyahByNumber } from '@/api';
 import { ThemedText } from '@/components/ThemedText';
 import { Colors } from '@/constants/Colors';
+import { PrayerKey } from '@/constants/Prayer';
 import { useColorScheme } from '@/hooks/useColorScheme';
-import { logError } from '@/utils/logger';
+import { usePrayerTimes } from '@/hooks/usePrayerTimes';
+import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { SafeAreaView, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Dimensions, SafeAreaView, ScrollView, Switch, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
-// Constants and mock data
-const PRAYER_NAMES = [
-  { key: 'fajr', name: 'Fajr' },
-  { key: 'sunrise', name: 'Sunrise' },
-  { key: 'dhuhr', name: 'Dhuhr' },
-  { key: 'asr', name: 'Asr' },
-  { key: 'maghrib', name: 'Maghrib' },
-  { key: 'isha', name: 'Isha' },
-];
-// Update mock data type to allow string index
-const MOCK_PRAYER_TIMES: Record<string, { [key: string]: string }> = {
-  '2024-1-1': { fajr: '05:30', sunrise: '07:00', dhuhr: '12:30', asr: '15:45', maghrib: '18:15', isha: '20:45' },
-  '2024-1-2': { fajr: '05:31', sunrise: '07:01', dhuhr: '12:31', asr: '15:46', maghrib: '18:16', isha: '20:46' },
-  '2024-1-3': { fajr: '05:32', sunrise: '07:02', dhuhr: '12:32', asr: '15:47', maghrib: '18:17', isha: '20:47' },
-};
-const INITIAL_REMINDERS = [
-  { id: 1, prayer: 'Fajr', time: '05:30', enabled: true },
-  { id: 2, prayer: 'Dhuhr', time: '12:30', enabled: true },
-  { id: 3, prayer: 'Asr', time: '15:45', enabled: true },
-  { id: 4, prayer: 'Maghrib', time: '18:15', enabled: true },
-  { id: 5, prayer: 'Isha', time: '20:45', enabled: true },
-];
-const LOCATION = {
-  city: 'Zele, Belgium',
-  coords: '51.0656°N, 4.0409°E',
-};
-const MONTHS = [
-  'january', 'february', 'march', 'april', 'may', 'june',
-  'july', 'august', 'september', 'october', 'november', 'december'
-];
-const WEEKDAYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
-// Add static mapping for Islamic months
-const ISLAMIC_MONTHS = [
-  'muharram', 'safar', 
-   'rabi_al_awwal', 'rabi_al_thani', 'jumada_al_awwal', 'jumada_al_thani',
-  'rajab', 'shaban', 'ramadan', 'shawwal', 'dhu_al_qidah', 'dhu_al_hijjah'
-];
-
-// Quran constants
-const TOTAL_AYAHS = 6236;
-
-// Utility functions
-function getDaysInMonth(year: number, month: number): number {
-  return new Date(year, month + 1, 0).getDate();
-}
-function getFirstDayOfMonth(year: number, month: number): number {
-  return new Date(year, month, 1).getDay();
-}
-function getCalendarGrid(year: number, month: number): (number | null)[] {
-  const firstDay = getFirstDayOfMonth(year, month);
-  const daysInMonth = getDaysInMonth(year, month);
-  const days: (number | null)[] = [];
-  for (let i = 0; i < firstDay; i++) days.push(null);
-  for (let day = 1; day <= daysInMonth; day++) days.push(day);
-  return days;
-}
-function getNextPrayer(now: Date, times: Record<string, string>): { key: string; name: string; time: string } {
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
-  for (const key of ['fajr', 'sunrise', 'dhuhr', 'asr', 'maghrib', 'isha']) {
-    if (!times[key]) continue;
-    const [h, m] = times[key].split(':').map(Number);
-    const prayerMinutes = h * 60 + m;
-    if (prayerMinutes > currentMinutes) {
-      return { key, name: PRAYER_NAMES.find(p => p.key === key)?.name || key, time: times[key] };
-    }
-  }
-  // Next day's Fajr
-  return { key: 'fajr', name: 'Fajr', time: times['fajr'] };
-}
-function getCountdown(now: Date, nextPrayerTime: string): { hours: number; minutes: number; seconds: number } {
-  if (!nextPrayerTime) return { hours: 0, minutes: 0, seconds: 0 };
-  const [h, m] = nextPrayerTime.split(':').map(Number);
-  let next = new Date(now);
-  next.setHours(h, m, 0, 0);
-  if (next <= now) next.setDate(next.getDate() + 1);
-  const diff = next.getTime() - now.getTime();
-  const hours = Math.floor(diff / (1000 * 60 * 60));
-  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-  const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-  return { hours, minutes, seconds };
-}
-function getIslamicMonthName(month: number, t: any) {
-  return t(ISLAMIC_MONTHS[month % 12]);
-}
-function dateToAyahIndex(date: Date): number {
-  // Deterministic mapping within 1..TOTAL_AYAHS using a simple mixed hash of Y/M/D
-  const y = date.getFullYear();
-  const m = date.getMonth() + 1;
-  const d = date.getDate();
-  let hash = y * 374 + m * 31 + d;
-  hash = (hash ^ (hash << 13)) >>> 0;
-  hash = (hash ^ (hash >> 7)) >>> 0;
-  hash = (hash ^ (hash << 17)) >>> 0;
-  const idx = (hash % TOTAL_AYAHS) + 1;
-  return idx;
-}
 
 export default function CalendarTab() {
   const colorScheme = useColorScheme() ?? 'light';
-  const insets = useSafeAreaInsets();
+  useSafeAreaInsets();
   const { t } = useTranslation();
   const today = new Date();
   const [currentDate, setCurrentDate] = useState(today);
   const [selectedDate, setSelectedDate] = useState(today);
-  const [ayah, setAyah] = useState<{ text: string; surah: string; numberInSurah: number } | null>(null);
-  const [ayahExpanded, setAyahExpanded] = useState(false);
+  // Single-line swipeable week strip (no month toggle)
+  const {
+    loading,
+    error,
+    rows,
+    nextPrayerKey,
+    nextPrayerTimeString,
+    countdown,
+    reminderEnabled,
+    toggleReminder,
+    isToday,
+  } = usePrayerTimes(selectedDate);
 
-  // Calendar navigation
+  const [showSelection, setShowSelection] = useState<boolean>(false);
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
-  const calendarDays = useMemo(() => getCalendarGrid(year, month), [year, month]);
 
-  const goToPreviousMonth = () => setCurrentDate(new Date(year, month - 1, 1));
-  const goToNextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
-  const goToToday = () => {
-    setCurrentDate(today);
-    setSelectedDate(today);
-  };
-
-  const handleDayClick = (day: number | null) => {
-    if (day) {
-      const newSelectedDate = new Date(year, month, day);
-      setSelectedDate(newSelectedDate);
-    }
-  };
-
-  const isToday = (day: number | null) => {
-    return (
-      day === today.getDate() &&
-      month === today.getMonth() &&
-      year === today.getFullYear()
-    );
-  };
-  const isSelected = (day: number | null) => {
-    return (
-      selectedDate &&
-      day === selectedDate.getDate() &&
-      month === selectedDate.getMonth() &&
-      year === selectedDate.getFullYear()
-    );
-  };
-
-  // Fetch a deterministic "random" ayah for the selected date
-  useEffect(() => {
-    let cancelled = false;
-    setAyahExpanded(false);
-    (async () => {
-      const idx = dateToAyahIndex(selectedDate);
-      try {
-        const res = await getAyahByNumber(idx);
-        if (!cancelled) setAyah(res);
-      } catch (e: any) {
-        await logError(e, 'Calendar:getAyahByNumber');
-        if (!cancelled) setAyah(null);
-      }
-    })();
-    return () => { cancelled = true; };
+  // Dynamic scale based on screen height to fit content tighter on smaller devices
+  const windowHeight = Dimensions.get('window').height;
+  const SCALE = windowHeight < 720 ? 0.85 : windowHeight < 800 ? 0.9 : 1;
+  const FS_HEADER = Math.round(22 * SCALE);
+  const FS_WEEKDAY = Math.round(13 * SCALE);
+  const FS_TODAY_BTN = Math.round(16 * SCALE);
+  const PAD_TODAY_BTN_V = Math.round(7 * SCALE);
+  const PAD_TODAY_BTN_H = Math.round(18 * SCALE);
+  const RADIUS_TODAY_BTN = Math.round(12 * SCALE);
+  const WEEK_HEADER_PAD_V = Math.round(10 * SCALE);
+  const GRID_PADDING = Math.round(12 * SCALE);
+  const GRID_MARGIN_BOTTOM = Math.round(8 * SCALE);
+  const CELL_RADIUS = Math.round(10 * SCALE);
+  const CELL_MARGIN_BOTTOM = Math.round(2 * SCALE);
+  const DAY_FONT = Math.round(16 * SCALE);
+  const LOADING_PAD_V = Math.round(8 * SCALE);
+  const ERROR_PAD = Math.round(10 * SCALE);
+  const COUNTDOWN_CONTAINER_MV = Math.round(16 * SCALE);
+  const COUNTDOWN_TITLE_FS = Math.round(18 * SCALE);
+  const COUNTDOWN_TIME_FS = Math.round(18 * SCALE);
+  const COUNTDOWN_DIGIT_FS = Math.round(24 * SCALE);
+  const COUNTDOWN_SEP_FS = Math.round(28 * SCALE);
+  const SECTION_MARGIN_TOP = Math.round(8 * SCALE);
+  const CARD_PADDING = Math.round(14 * SCALE);
+  const CARD_RADIUS = Math.round(14 * SCALE);
+  const REMINDERS_MARGIN_TOP = Math.round(16 * SCALE);
+  const STATS_MARGIN_TOP = Math.round(16 * SCALE);
+  // Increase aspectRatio slightly (< height) to shrink calendar vertical footprint when scaling
+  const CELL_ASPECT = SCALE < 1 ? 1 + (1 - SCALE) * 0.8 : 1;
+  const PILL_WIDTH = Math.round(92 * SCALE);
+  const PILL_HEIGHT = Math.round(36 * SCALE);
+  const PILL_RADIUS = Math.round(10 * SCALE);
+  
+  const MONTHS = [
+    'january', 'february', 'march', 'april', 'may', 'june',
+    'july', 'august', 'september', 'october', 'november', 'december'
+  ];
+  const WEEKDAYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+  
+  function getDaysInMonth(year: number, month: number): number {
+    return new Date(year, month + 1, 0).getDate();
+  }
+  function getFirstDayOfMonth(year: number, month: number): number {
+    return new Date(year, month, 1).getDay();
+  }
+  function getWeekStart(d: Date) {
+    const base = new Date(d);
+    const start = new Date(base);
+    start.setHours(0, 0, 0, 0);
+    start.setDate(base.getDate() - base.getDay());
+    return start;
+  }
+  function getCalendarGrid(year: number, month: number): (number | null)[] {
+    const firstDay = getFirstDayOfMonth(year, month);
+    const daysInMonth = getDaysInMonth(year, month);
+    const days: (number | null)[] = [];
+    for (let i = 0; i < firstDay; i++) days.push(null);
+    for (let day = 1; day <= daysInMonth; day++) days.push(day);
+    return days;
+  }
+  const weekDates = useMemo(() => {
+    const base = new Date(selectedDate);
+    const start = new Date(base);
+    start.setDate(base.getDate() - base.getDay()); // Sunday start
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      return d;
+    });
   }, [selectedDate]);
+  const prevWeek = () => setSelectedDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate() - 7));
+  const nextWeek = () => setSelectedDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate() + 7));
+  // Navigation helpers (not rendered yet)
+  const goToToday = () => { setCurrentDate(today); setSelectedDate(today); };
+  const handleDayClick = (day: number | null) => { if (day) setSelectedDate(new Date(year, month, day)); };
+  const handleWeekDateClick = (date: Date) => { setSelectedDate(date); setCurrentDate(new Date(date.getFullYear(), date.getMonth(), 1)); };
+  const isTodayCell = (day: number | null) => day === today.getDate() && month === today.getMonth() && year === today.getFullYear();
+  const isSelectedCell = (day: number | null) => selectedDate && day === selectedDate.getDate() && month === selectedDate.getMonth() && year === selectedDate.getFullYear();
+  
+  // Hide location/timezone selection for now
+  useEffect(() => { setShowSelection(false); }, []);
+
+  const windowWidth = Dimensions.get('window').width;
+  const WEEK_ITEM_WIDTH = windowWidth - 16; // account for marginHorizontal ~8 on both sides
+  const ISLAMIC_MONTHS = [
+    'muharram', 'safar', 'rabi_al_awwal', 'rabi_al_thani', 'jumada_al_awwal', 'jumada_al_thani',
+    'rajab', 'shaban', 'ramadan', 'shawwal', 'dhu_al_qidah', 'dhu_al_hijjah'
+  ];
+  function getIslamicMonthName(month: number) {
+    return t(ISLAMIC_MONTHS[month % 12]);
+  }
+  const WEEKS_AROUND = 52;
+  const weekStartSelected = useMemo(() => getWeekStart(selectedDate), [selectedDate]);
+  const weeksData = useMemo(() => {
+    return Array.from({ length: WEEKS_AROUND * 2 + 1 }, (_, i) => {
+      const offsetWeeks = i - WEEKS_AROUND;
+      const d = new Date(weekStartSelected);
+      d.setDate(weekStartSelected.getDate() + offsetWeeks * 7);
+      return d;
+    });
+  }, [weekStartSelected]);
+  const [currentWeekIndex, setCurrentWeekIndex] = useState(WEEKS_AROUND);
+  const weekListRef = React.useRef(null);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Colors[colorScheme].background, paddingTop: 6 }}>
-      {/* Month Info (no background) */}
-      <View style={{ alignItems: 'center', marginBottom: 8 }}>
-        <ThemedText style={{ fontSize: 22, fontWeight: 'bold', color: Colors[colorScheme].primary }}>{getIslamicMonthName(month, t)} {year}</ThemedText>
-        <ThemedText style={{ color: Colors[colorScheme].secondary, fontSize: 14 }}>{t(MONTHS[month])} {year}</ThemedText>
-        <TouchableOpacity
-          onPress={goToToday}
-          style={{ marginTop: 6, paddingVertical: 7, paddingHorizontal: 18, backgroundColor: Colors[colorScheme].surface, borderRadius: 12, alignItems: 'center' }}
-        >
-          <ThemedText style={{ color: Colors[colorScheme].primary, fontWeight: '600', fontSize: 16 }}>{t('today')}</ThemedText>
-        </TouchableOpacity>
-      </View>
-      <ScrollView contentContainerStyle={{ flexGrow: 1, backgroundColor: Colors[colorScheme].background, paddingBottom: insets.bottom + 48 }}>
-        <View style={{ flex: 1, paddingHorizontal: 0, paddingTop: 0 }}>
-          {/* Weekday Headers */}
-          <View style={{ flexDirection: 'row', backgroundColor: Colors[colorScheme].surface, paddingVertical: 10, borderRadius: 12, marginHorizontal: 16, marginBottom: 2 }}>
-            {WEEKDAYS.map((day) => (
-              <View key={day} style={{ flex: 1, alignItems: 'center' }}>
-                <ThemedText style={{ color: Colors[colorScheme].primary, fontWeight: 'bold', fontSize: 13, letterSpacing: 1 }}>{t(day)}</ThemedText>
-              </View>
-            ))}
-          </View>
-          {/* Calendar Grid */}
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 2, padding: 12, marginHorizontal: 8, backgroundColor: 'transparent', marginBottom: 8 }}>
-            {calendarDays.map((day, index) => {
-              const selected = isSelected(day);
-              const todayCell = isToday(day);
-              return (
-                <TouchableOpacity
-                  key={index}
-                  onPress={() => handleDayClick(day)}
-                  disabled={day === null}
-                  style={{
-                    width: `${100 / 7}%`,
-                    aspectRatio: 1,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    borderRadius: 10,
-                    marginBottom: 2,
-                    backgroundColor:
-                      day === null ? 'transparent'
-                      : selected ? Colors[colorScheme].primary
-                      : todayCell ? Colors[colorScheme].surface
-                      : 'transparent',
-                    shadowColor: selected ? Colors[colorScheme].primary : undefined,
-                    shadowOpacity: selected ? 0.2 : 0,
-                    shadowRadius: selected ? 8 : 0,
-                    elevation: selected ? 2 : 0,
-                    borderWidth: todayCell && !selected ? 1 : 0,
-                    borderColor: todayCell && !selected ? Colors[colorScheme].primary : 'transparent',
-                    ...(selected ? { transform: [{ scale: 1.08 }] } : {}),
-                  }}
-                  activeOpacity={day !== null ? 0.7 : 1}
-                >
-                  <ThemedText style={{
-                    color: day === null ? 'transparent'
-                      : selected ? Colors[colorScheme].icon
-                      : todayCell ? Colors[colorScheme].primary
-                      : Colors[colorScheme].text,
-                    fontWeight: selected || todayCell ? 'bold' : '500',
-                    fontSize: 16,
-                  }}>{day}</ThemedText>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-          {/* Word of the Day tied to selected date */}
-          <View style={{ marginHorizontal: 16, marginTop: 4, padding: 14, backgroundColor: Colors[colorScheme].surface, borderRadius: 14, alignItems: 'center' }}>
-            <ThemedText style={{ color: Colors[colorScheme].primary, fontWeight: 'bold', fontSize: 16, marginBottom: 4 }}>{t('word_of_the_day')}</ThemedText>
-            <ThemedText
-              style={{ color: Colors[colorScheme].text, fontSize: 15, textAlign: 'center', alignSelf: 'stretch' }}
-              numberOfLines={ayahExpanded ? undefined : 4}
-            >
-              {ayah ? `${ayah.text}\n— ${ayah.surah} ${ayah.numberInSurah}` : t('word_of_the_day_quote')}
+      <ScrollView contentContainerStyle={{ flexGrow: 1, backgroundColor: Colors[colorScheme].background }}>
+        {/* Calendar Header */}
+        <View style={{ alignItems: 'center', marginBottom: Math.round(8 * SCALE) }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', paddingHorizontal: 16 }}>
+            <TouchableOpacity onPress={prevWeek}>
+              <Ionicons name="chevron-back" size={Math.round(24 * SCALE)} color={Colors[colorScheme].primary} />
+            </TouchableOpacity>
+            <ThemedText style={{ fontSize: FS_HEADER, fontWeight: 'bold', color: Colors[colorScheme].primary }}>
+              {t(MONTHS[selectedDate.getMonth()])} {selectedDate.getFullYear()} — {getIslamicMonthName(selectedDate.getMonth())}
             </ThemedText>
-            {ayah && ayah.text && ayah.text.length > 160 && (
-              <TouchableOpacity onPress={() => setAyahExpanded((v) => !v)} style={{ marginTop: 8 }}>
-                <ThemedText style={{ color: Colors[colorScheme].primary, fontWeight: '600' }}>
-                  {ayahExpanded ? t('show_less') : t('read_more')}
-                </ThemedText>
+            <TouchableOpacity onPress={nextWeek}>
+              <Ionicons name="chevron-forward" size={Math.round(24 * SCALE)} color={Colors[colorScheme].primary} />
+            </TouchableOpacity>
+          </View>
+          {/* Removed selected date label */}
+          <TouchableOpacity
+            onPress={goToToday}
+            style={{ marginTop: Math.round(6 * SCALE), paddingVertical: PAD_TODAY_BTN_V, paddingHorizontal: PAD_TODAY_BTN_H, backgroundColor: Colors[colorScheme].surface, borderRadius: RADIUS_TODAY_BTN, alignItems: 'center' }}
+          >
+            <ThemedText style={{ color: Colors[colorScheme].primary, fontWeight: '600', fontSize: FS_TODAY_BTN }}>{t('today')}</ThemedText>
+          </TouchableOpacity>
+        </View>
+        {/* Removed Week/Month toggle */}
+
+        {/* Weekday Headers */}
+        <View style={{ flexDirection: 'row', backgroundColor: Colors[colorScheme].surface, paddingVertical: WEEK_HEADER_PAD_V, borderRadius: 12, marginHorizontal: 16, marginBottom: Math.round(2 * SCALE) }}>
+          {WEEKDAYS.map((day) => (
+            <View key={day} style={{ flex: 1, alignItems: 'center' }}>
+              <ThemedText style={{ color: Colors[colorScheme].primary, fontWeight: 'bold', fontSize: FS_WEEKDAY, letterSpacing: 1 }}>{t(day)}</ThemedText>
+            </View>
+          ))}
+        </View>
+        {/* Single-line swipeable week strip */}
+        <View style={{ flexDirection: 'row', gap: Math.round(2 * SCALE), padding: GRID_PADDING, marginHorizontal: 8, backgroundColor: 'transparent', marginBottom: GRID_MARGIN_BOTTOM }}>
+          {weekDates.map((date, index) => {
+            const inCurrentMonth = date.getMonth() === month;
+            const isTodayWeek = date.getFullYear() === today.getFullYear() && date.getMonth() === today.getMonth() && date.getDate() === today.getDate();
+            const isSelectedWeek = date.getFullYear() === selectedDate.getFullYear() && date.getMonth() === selectedDate.getMonth() && date.getDate() === selectedDate.getDate();
+            return (
+              <TouchableOpacity
+                key={index}
+                onPress={() => handleWeekDateClick(date)}
+                style={{
+                  flex: 1,
+                  aspectRatio: CELL_ASPECT,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: CELL_RADIUS,
+                  backgroundColor: isSelectedWeek ? Colors[colorScheme].primary : isTodayWeek ? Colors[colorScheme].surface : 'transparent',
+                  shadowColor: isSelectedWeek ? Colors[colorScheme].primary : undefined,
+                  shadowOpacity: isSelectedWeek ? 0.2 : 0,
+                  shadowRadius: isSelectedWeek ? 8 : 0,
+                  elevation: isSelectedWeek ? 2 : 0,
+                }}
+                activeOpacity={0.7}
+              >
+                <ThemedText style={{
+                  color: isSelectedWeek ? Colors[colorScheme].background : inCurrentMonth ? Colors[colorScheme].text : '#bbb',
+                  fontWeight: isSelectedWeek || isTodayWeek ? 'bold' : '500',
+                  fontSize: DAY_FONT,
+                }}>{date.getDate()}</ThemedText>
+                {isSelectedWeek && (
+                  <ThemedText style={{ position: 'absolute', bottom: Math.round(4 * SCALE), color: Colors[colorScheme].background, fontSize: Math.round(10 * SCALE) }}>
+                    {t(MONTHS[date.getMonth()]).slice(0,3)}
+                  </ThemedText>
+                )}
               </TouchableOpacity>
-            )}
+            );
+          })}
+        </View>
+        {loading && (
+          <View style={{ paddingVertical: LOADING_PAD_V }}>
+            <ActivityIndicator color={Colors[colorScheme].primary} />
+          </View>
+        )}
+        {!!error && (
+          <View style={{ marginHorizontal: 16, padding: ERROR_PAD, borderRadius: 8, backgroundColor: Colors[colorScheme].surface }}>
+            <ThemedText style={{ color: Colors[colorScheme].error }}>{error}</ThemedText>
+          </View>
+        )}
+        {/* Location/Timezone selection temporarily removed */}
+
+        {/* Prayer Times Table */}
+        <View style={{ marginHorizontal: 16, marginTop: SECTION_MARGIN_TOP, padding: CARD_PADDING, backgroundColor: Colors[colorScheme].surface, borderRadius: CARD_RADIUS }}>
+          <ThemedText style={{ color: Colors[colorScheme].primary, fontWeight: 'bold', fontSize: 16, marginBottom: 4 }}>{t('todays_prayer_times')}</ThemedText>
+          {rows.map((row) => (
+            <View key={row.key} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: Math.round(6 * SCALE) }}>
+              <ThemedText style={{ color: Colors[colorScheme].text }}>{t(row.key.toLowerCase(), { defaultValue: row.key })}</ThemedText>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: Math.round(10 * SCALE) }}>
+                {/* Time pill */}
+                <View style={{ width: PILL_WIDTH, height: PILL_HEIGHT, borderRadius: PILL_RADIUS, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors[colorScheme].surface }}>
+                  <ThemedText style={{ color: Colors[colorScheme].text, fontWeight: 'bold' }}>{row.time}</ThemedText>
+                </View>
+                {/* Switch pill */}
+                <View style={{ width: PILL_WIDTH, height: PILL_HEIGHT, borderRadius: PILL_RADIUS, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors[colorScheme].surface, opacity: row.notifiable ? 1 : 0.5 }}>
+                  <Switch
+                    value={row.notifiable ? !!reminderEnabled[row.key as PrayerKey] : false}
+                    onValueChange={row.notifiable ? (() => toggleReminder(row.key as PrayerKey)) : undefined}
+                    disabled={!row.notifiable}
+                  />
+                </View>
+              </View>
+            </View>
+          ))}
+        </View>
+        {/* Next Prayer Countdown (moved below prayer times) */}
+        {isToday && (
+        <View style={{ alignItems: 'center', marginVertical: COUNTDOWN_CONTAINER_MV }}>
+          {/* Keep space tight by removing title row */}
+          <ThemedText style={{ color: Colors[colorScheme].secondary, fontWeight: 'bold', fontSize: COUNTDOWN_TITLE_FS }}>{nextPrayerKey ? t(nextPrayerKey.toLowerCase(), { defaultValue: nextPrayerKey }) : '—'}</ThemedText>
+          <ThemedText style={{ color: Colors[colorScheme].primary, fontWeight: 'bold', fontSize: COUNTDOWN_TIME_FS }}>{nextPrayerTimeString ?? '—'}</ThemedText>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
+            <ThemedText style={{ fontSize: COUNTDOWN_DIGIT_FS, fontWeight: 'bold', color: Colors[colorScheme].text, fontFamily: 'monospace' }}>{String(countdown.hours).padStart(2, '0')}</ThemedText>
+            <ThemedText style={{ fontSize: COUNTDOWN_SEP_FS, fontWeight: 'bold', color: Colors[colorScheme].secondary, marginHorizontal: 2 }}>:</ThemedText>
+            <ThemedText style={{ fontSize: COUNTDOWN_DIGIT_FS, fontWeight: 'bold', color: Colors[colorScheme].text, fontFamily: 'monospace' }}>{String(countdown.minutes).padStart(2, '0')}</ThemedText>
+            <ThemedText style={{ fontSize: COUNTDOWN_SEP_FS, fontWeight: 'bold', color: Colors[colorScheme].secondary, marginHorizontal: 2 }}>:</ThemedText>
+            <ThemedText style={{ fontSize: COUNTDOWN_DIGIT_FS, fontWeight: 'bold', color: Colors[colorScheme].text, fontFamily: 'monospace' }}>{String(countdown.seconds).padStart(2, '0')}</ThemedText>
           </View>
         </View>
+        )}
+        {/* Removed Reminders and Stats sections for now */}
       </ScrollView>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
-  navBtn: {
-    padding: 8,
-    borderRadius: 8,
-  },
-  navIcon: {
-    fontSize: 24,
-  },
-  monthYear: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 4,
-  },
-  dayCell: {
-    width: `${100 / 7}%`,
-    aspectRatio: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 8,
-    marginBottom: 4,
-  },
-  headerCell: {
-    fontWeight: 'bold',
-    fontSize: 14,
-    backgroundColor: 'transparent',
-  },
-  invisibleCell: {
-    backgroundColor: 'transparent',
-  },
-  invisibleText: {
-    color: 'transparent',
-  },
-  otherMonthCell: {
-    backgroundColor: 'transparent',
-  },
-  otherMonthText: {
-    color: '#bbb',
-  },
-  todayCell: {},
-  todayText: {
-    fontWeight: 'bold',
-  },
-  selectedCell: {
-    borderWidth: 2,
-  },
-  selectedText: {
-    fontWeight: 'bold',
-  },
-  dayText: {
-    fontSize: 16,
-  },
-  card: {
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 16,
-    marginBottom: 8,
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  icon: {
-    fontSize: 24,
-    marginRight: 4,
-  },
-  prayerGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    marginBottom: 8,
-    justifyContent: 'space-between',
-  },
-  prayerCell: {
-    flexBasis: '48%',
-    borderRadius: 14,
-    borderWidth: 1,
-    padding: 16,
-    alignItems: 'center',
-    marginBottom: 8,
-    position: 'relative',
-  },
-  prayerName: {
-    fontSize: 16,
-    fontWeight: '500',
-    marginBottom: 4,
-  },
-  prayerTime: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    fontFamily: 'monospace',
-  },
-  countdownRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginTop: 4,
-  },
-  countdownItem: {
-    borderRadius: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    minWidth: 60,
-    alignItems: 'center',
-  },
-  countdownValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    fontFamily: 'monospace',
-  },
-  countdownLabel: {
-    fontSize: 10,
-    fontWeight: '600',
-    marginTop: 2,
-  },
-  countdownSeparator: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginHorizontal: 2,
-  },
-  reminderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
-  },
-  reminderSeparator: {
-    height: 1,
-    marginVertical: 2,
-  },
-}); 

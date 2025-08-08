@@ -7,8 +7,9 @@ import { computeCountdown, fetchPrayerTimesFromApi, findNextPrayer, formatTimeHH
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-const STORAGE_REMINDER_MAP_KEY = '@prayer_reminders_enabled_map_v1';
+const STORAGE_REMINDER_MAP_KEY = '@prayer_reminders_enabled_map_v2';
 const STORAGE_TIMEZONE_KEY = '@prayer_selected_timezone_v1';
+const STORAGE_SCHEDULED_FOR_KEY = '@prayer_notifications_scheduled_for_v1';
 
 type ReminderEnabledMap = Partial<Record<PrayerKey, boolean>>;
 
@@ -17,7 +18,7 @@ const defaultReminderMap: ReminderEnabledMap = NOTIFIABLE_PRAYER_KEYS.reduce((ac
   return acc;
 }, {} as ReminderEnabledMap);
 
-export function usePrayerTimes() {
+export function usePrayerTimes(selectedDate?: Date) {
   const { location, requestPermission, getCurrentLocation, permissionDenied, setManualLocation } = useLocation();
   const [times, setTimes] = useState<PrayerTimesMap | null>(null);
   const [loading, setLoading] = useState(false);
@@ -28,15 +29,30 @@ export function usePrayerTimes() {
   const [now, setNow] = useState<Date>(new Date());
   const [selectedTimezone, setSelectedTimezone] = useState<SupportedTimezone>(DEFAULT_TIMEZONE);
   const [timezoneChosen, setTimezoneChosen] = useState<boolean>(false);
+  const baseDate = useMemo(() => selectedDate ?? new Date(), [selectedDate]);
+  const isToday = useMemo(() => {
+    const d = baseDate;
+    const t = new Date();
+    return d.getFullYear() === t.getFullYear() && d.getMonth() === t.getMonth() && d.getDate() === t.getDate();
+  }, [baseDate]);
+  const dateKey = useMemo(() => {
+    const y = baseDate.getFullYear();
+    const m = String(baseDate.getMonth() + 1).padStart(2, '0');
+    const d = String(baseDate.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }, [baseDate]);
 
   // Load reminder prefs and timezone
   useEffect(() => {
     (async () => {
       try {
-        const raw = await AsyncStorage.getItem(STORAGE_REMINDER_MAP_KEY);
+        const raw = await AsyncStorage.getItem(`${STORAGE_REMINDER_MAP_KEY}:${dateKey}`);
         if (raw) {
           const parsed = JSON.parse(raw);
           setReminderEnabled({ ...defaultReminderMap, ...parsed });
+        } else {
+          // default when no explicit setting for the date
+          setReminderEnabled(defaultReminderMap);
         }
       } catch {}
       try {
@@ -47,7 +63,7 @@ export function usePrayerTimes() {
         }
       } catch {}
     })();
-  }, []);
+  }, [dateKey]);
 
   // Ask for permission and fetch location on mount if not available
   useEffect(() => {
@@ -69,25 +85,31 @@ export function usePrayerTimes() {
     setLoading(true);
     setError(null);
     try {
-      const { times } = await fetchPrayerTimesFromApi(location.lat, location.lng, new Date(), undefined, undefined, selectedTimezone);
+      const { times } = await fetchPrayerTimesFromApi(location.lat, location.lng, baseDate, undefined, undefined, selectedTimezone);
       setTimes(times);
-      // Schedule notifications for remaining prayers today
-      try {
-        await initNotifications();
-        await cancelPrayerNotifications();
-        const scheduleList = Object.entries(times)
-          .filter(([k]) => NOTIFIABLE_PRAYER_KEYS.includes(k as PrayerKey))
-          .map(([k, d]) => ({ key: k as PrayerKey, date: d }));
-        await schedulePrayerNotifications(scheduleList, reminderEnabled);
-      } catch {
-        // ignore scheduling errors
+      // Schedule notifications only if viewing today's times
+      if (isToday) {
+        try {
+          const scheduledFor = await AsyncStorage.getItem(STORAGE_SCHEDULED_FOR_KEY);
+          if (scheduledFor !== dateKey) {
+            await initNotifications();
+            await cancelPrayerNotifications();
+            const scheduleList = Object.entries(times)
+              .filter(([k]) => NOTIFIABLE_PRAYER_KEYS.includes(k as PrayerKey))
+              .map(([k, d]) => ({ key: k as PrayerKey, date: d }));
+            await schedulePrayerNotifications(scheduleList, reminderEnabled);
+            await AsyncStorage.setItem(STORAGE_SCHEDULED_FOR_KEY, dateKey);
+          }
+        } catch {
+          // ignore scheduling errors
+        }
       }
     } catch (e: any) {
       setError(e?.message || 'Failed to fetch prayer times');
     } finally {
       setLoading(false);
     }
-  }, [location, reminderEnabled, selectedTimezone]);
+  }, [location, reminderEnabled, selectedTimezone, baseDate, isToday, dateKey]);
 
   // Fetch times when location or timezone changes
   useEffect(() => {
@@ -117,9 +139,9 @@ export function usePrayerTimes() {
   }, []);
 
   const next = useMemo(() => {
-    if (!times) return null;
+    if (!times || !isToday) return null;
     return findNextPrayer(times, now);
-  }, [times, now]);
+  }, [times, now, isToday]);
 
   const countdown = useMemo(() => {
     if (!next) return { hours: 0, minutes: 0, seconds: 0, totalMs: 0 };
@@ -132,8 +154,8 @@ export function usePrayerTimes() {
     const nextMap = { ...reminderEnabled, [key]: !reminderEnabled[key] };
     setReminderEnabled(nextMap);
     try {
-      await AsyncStorage.setItem(STORAGE_REMINDER_MAP_KEY, JSON.stringify(nextMap));
-      if (times) {
+      await AsyncStorage.setItem(`${STORAGE_REMINDER_MAP_KEY}:${dateKey}`, JSON.stringify(nextMap));
+      if (times && isToday) {
         await cancelPrayerNotifications();
         const scheduleList = Object.entries(times)
           .filter(([k]) => NOTIFIABLE_PRAYER_KEYS.includes(k as PrayerKey))
@@ -143,7 +165,7 @@ export function usePrayerTimes() {
     } catch {
       // ignore
     }
-  }, [reminderEnabled, times]);
+  }, [reminderEnabled, times, isToday, dateKey]);
 
   const setTimezone = useCallback(async (tz: SupportedTimezone) => {
     setSelectedTimezone(tz);
@@ -180,5 +202,6 @@ export function usePrayerTimes() {
     setTimezone,
     mockLocations: MOCK_LOCATIONS,
     selectMockLocation,
+    isToday,
   };
 }

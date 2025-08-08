@@ -7,6 +7,7 @@ import { ThemedView } from '@/components/ThemedView';
 import { Colors } from '@/constants/Colors';
 import { useAssistantMessages } from '@/hooks/useAssistantMessages';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { usePrayerTimes } from '@/hooks/usePrayerTimes';
 import { useVoiceInput } from '@/hooks/useVoiceInput';
 import { formatSurahAyatMessage } from '@/utils/formatSurahAyatMessage';
 import { deleteGroqToken, getGroqToken, saveGroqToken } from '@/utils/tokenStorage';
@@ -17,16 +18,16 @@ import * as Sharing from 'expo-sharing';
 import * as Speech from 'expo-speech';
 import { useTranslation } from 'react-i18next';
 import {
-    FlatList,
-    Keyboard,
-    KeyboardAvoidingView,
-    Platform,
-    SafeAreaView,
-    StyleSheet,
-    Switch,
-    TextInput,
-    TouchableOpacity,
-    View
+  FlatList,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  SafeAreaView,
+  StyleSheet,
+  Switch,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import Markdown from 'react-native-markdown-display';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -48,6 +49,7 @@ export default function HomeScreen() {
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
   const colorScheme = useColorScheme() ?? 'light';
+  const { nextPrayerKey, nextPrayerTimeString, countdown } = usePrayerTimes();
   const flatListRef = useRef<FlatList>(null);
   const insets = useSafeAreaInsets();
   const [groqApiKey, setGroqApiKey] = useState<string | null>(null);
@@ -326,6 +328,12 @@ export default function HomeScreen() {
   // Add a modal or prompt for API key
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Colors[colorScheme].background, paddingTop: 6 }}>
+      <View style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
+        <ThemedText style={{ fontSize: 22, fontWeight: 'bold', color: Colors[colorScheme].primary }}>Qibliah AI</ThemedText>
+        <ThemedText numberOfLines={1} style={{ marginTop: 4, color: Colors[colorScheme].secondary }}>
+          {t('next_prayer')}: {nextPrayerKey ? t(nextPrayerKey.toLowerCase(), { defaultValue: nextPrayerKey }) : '—'} {nextPrayerTimeString ?? '—'} — {String(countdown.hours).padStart(2, '0')}:{String(countdown.minutes).padStart(2, '0')}:{String(countdown.seconds).padStart(2, '0')}
+        </ThemedText>
+      </View>
       {/* Remember Chat Modal */}
       {showRememberModal && (
         <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.4)', zIndex: 100, justifyContent: 'center', alignItems: 'center' }}>
