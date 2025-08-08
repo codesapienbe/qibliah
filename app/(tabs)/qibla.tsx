@@ -15,7 +15,8 @@ import { ActivityIndicator, Dimensions, ScrollView, StyleSheet, Text, TouchableO
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-const COMPASS_SIZE = 240;
+const SCALE = 0.8;
+const COMPASS_SIZE = Math.round(240 * SCALE);
 
 // Real Kaaba coordinates
 const KAABA = {
@@ -41,7 +42,7 @@ export default function QiblaTab() {
     stopCompass,
   } = useQiblaDirection();
   const windowHeight = Dimensions.get('window').height;
-  const mapHeight = Math.round(windowHeight * 0.33);
+  const mapHeight = Math.round(windowHeight * 0.33 * SCALE);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -101,8 +102,8 @@ export default function QiblaTab() {
   const compassRotation = heading != null ? -heading : 0;
   
   // Calculate Kaaba icon position on compass circle
-  let kaabaX = COMPASS_SIZE / 2 - 16; // Default center position
-  let kaabaY = COMPASS_SIZE / 2 - 16;
+  let kaabaX = COMPASS_SIZE / 2 - Math.round(16 * SCALE); // Default center position
+  let kaabaY = COMPASS_SIZE / 2 - Math.round(16 * SCALE);
   let isNearQibla = false;
   
   if (qiblaDegrees !== null && heading !== null) {
@@ -112,15 +113,15 @@ export default function QiblaTab() {
     const compassRadius = (COMPASS_SIZE - 60) / 2; // Account for border and icon size
     
     // Position on compass circle
-    kaabaX = COMPASS_SIZE / 2 + compassRadius * Math.sin(kaabaRadians) - 16;
-    kaabaY = COMPASS_SIZE / 2 - compassRadius * Math.cos(kaabaRadians) - 16;
+    kaabaX = COMPASS_SIZE / 2 + compassRadius * Math.sin(kaabaRadians) - Math.round(16 * SCALE);
+    kaabaY = COMPASS_SIZE / 2 - compassRadius * Math.cos(kaabaRadians) - Math.round(16 * SCALE);
     
     // Check if user is facing Qibla direction (within 15 degrees tolerance)
     const angleDiff = Math.abs(((heading - qiblaDegrees + 540) % 360) - 180);
     isNearQibla = angleDiff < 15;
   }
   
-  const kaabaIconSize = isNearQibla ? 64 : 32; // 2x larger when near Qibla
+  const kaabaIconSize = Math.round((isNearQibla ? 64 : 32) * SCALE); // 2x larger when near Qibla
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Colors[colorScheme].background, paddingTop: 6 }}>
@@ -196,37 +197,7 @@ export default function QiblaTab() {
                 )}
               </View>
               
-              {/* Direction Info */}
-              <View style={styles.qiblaInfo}>
-                <ThemedText style={[styles.directionLabel, { color: Colors[colorScheme].text }]}>
-                  {t('qibla_direction')}
-                </ThemedText>
-                {qiblaDegrees !== null ? (
-                  <>
-                    <ThemedText style={[
-                      styles.directionValue, 
-                      { color: isNearQibla ? Colors[colorScheme].primary : Colors[colorScheme].secondary }
-                    ]}>
-                      <Text>{qiblaDegrees !== null ? qiblaDegrees : ''}</Text>
-                      <Text style={{fontSize: 32}}>°</Text>
-                    </ThemedText>
-                    {isNearQibla && (
-                      <ThemedText style={[styles.alignedText, { color: Colors[colorScheme].primary }]}> 
-                        {t('qibla_facing_qibla')}
-                      </ThemedText>
-                    )}
-                    {/* accuracy && (
-                      <ThemedText style={{ color: Colors[colorScheme].text, fontSize: 12, marginTop: 4 }}>
-                        {t('qibla_accuracy', { value: accuracy.toFixed(1) })}
-                      </ThemedText>
-                    ) */}
-                  </>
-                ) : (
-                  <ThemedText style={{ color: Colors[colorScheme].error, fontSize: 16 }}>
-                    {t('qibla_waiting_for_location')}
-                  </ThemedText>
-                )}
-              </View>
+              {/* Direction Info moved into details table below */}
             </View>
 
             {/* MapView: shows path and distance between User and Kaaba */}
@@ -246,15 +217,15 @@ export default function QiblaTab() {
               >
                 {/* Kaaba Marker */}
                 <Marker coordinate={kaabaLatLng} anchor={{ x: 0.5, y: 0.9 }}>
-                  <View style={{ padding: 6, backgroundColor: Colors[colorScheme].surface, borderRadius: 12, borderWidth: 1, borderColor: Colors[colorScheme].cardBorder }}>
-                    <KaabaIcon size={22} />
+                  <View style={{ padding: Math.round(6 * SCALE), backgroundColor: Colors[colorScheme].surface, borderRadius: Math.round(12 * SCALE), borderWidth: 1, borderColor: Colors[colorScheme].cardBorder }}>
+                    <KaabaIcon size={Math.round(22 * SCALE)} />
                   </View>
                 </Marker>
                 {/* User Marker */}
                 {userLatLng && (
                   <Marker coordinate={userLatLng} anchor={{ x: 0.5, y: 0.9 }}>
-                    <View style={{ padding: 6, backgroundColor: Colors[colorScheme].surface, borderRadius: 12, borderWidth: 1, borderColor: Colors[colorScheme].cardBorder }}>
-                      <Ionicons name="home" size={20} color={Colors[colorScheme].primary} />
+                    <View style={{ padding: Math.round(6 * SCALE), backgroundColor: Colors[colorScheme].surface, borderRadius: Math.round(12 * SCALE), borderWidth: 1, borderColor: Colors[colorScheme].cardBorder }}>
+                      <Ionicons name="home" size={Math.round(20 * SCALE)} color={Colors[colorScheme].primary} />
                     </View>
                   </Marker>
                 )}
@@ -265,7 +236,7 @@ export default function QiblaTab() {
                       coordinates={[userLatLng, kaabaLatLng]}
                       geodesic
                       strokeColor={Colors[colorScheme].primary}
-                      strokeWidth={3}
+                      strokeWidth={Math.max(2, Math.round(3 * SCALE))}
                     />
                     {/* Distance label at midpoint */}
                     <Marker
@@ -275,7 +246,7 @@ export default function QiblaTab() {
                       }}
                       anchor={{ x: 0.5, y: 0.5 }}
                     >
-                      <View style={{ paddingVertical: 6, paddingHorizontal: 10, backgroundColor: Colors[colorScheme].surface, borderRadius: 12, borderWidth: 1, borderColor: Colors[colorScheme].cardBorder, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 4, elevation: 2 }}>
+                      <View style={{ paddingVertical: Math.round(6 * SCALE), paddingHorizontal: Math.round(10 * SCALE), backgroundColor: Colors[colorScheme].surface, borderRadius: Math.round(12 * SCALE), borderWidth: 1, borderColor: Colors[colorScheme].cardBorder, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 4, elevation: 2 }}>
                         <ThemedText style={{ color: Colors[colorScheme].text, fontWeight: 'bold' }}>{distance}</ThemedText>
                       </View>
                     </Marker>
@@ -298,6 +269,16 @@ export default function QiblaTab() {
                 </View>
               ) : location ? (
                 <>
+                  {/* Qibla Direction Row */}
+                  <View style={[styles.locationRow, { borderBottomColor: Colors[colorScheme].cardBorder }]}> 
+                    <ThemedText style={{ color: Colors[colorScheme].text }}>{t('qibla_direction')}:</ThemedText>
+                    <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
+                      <ThemedText style={{ color: isNearQibla ? Colors[colorScheme].primary : Colors[colorScheme].secondary, fontWeight: 'bold' }}>
+                        {qiblaDegrees !== null ? qiblaDegrees : '—'}
+                      </ThemedText>
+                      <ThemedText style={{ color: isNearQibla ? Colors[colorScheme].primary : Colors[colorScheme].secondary, marginLeft: 2 }}>°</ThemedText>
+                    </View>
+                  </View>
                   <View style={[styles.locationRow, { borderBottomColor: Colors[colorScheme].cardBorder }]}> 
                     <ThemedText style={{ color: Colors[colorScheme].text }}>{t('qibla_your_location')}:</ThemedText>
                     <ThemedText style={{ color: Colors[colorScheme].text, fontFamily: 'monospace' }}>
@@ -331,21 +312,40 @@ export default function QiblaTab() {
       {/* Floating locate button */}
       <TouchableOpacity
         onPress={handleLocate}
-        style={{ position: 'absolute', right: 20, bottom: 24, width: 56, height: 56, borderRadius: 28, backgroundColor: Colors[colorScheme].primary, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 6, shadowOffset: { width: 0, height: 3 }, elevation: 4 }}
+        style={{ position: 'absolute', right: Math.round(20 * SCALE), bottom: Math.round(24 * SCALE), width: Math.round(56 * SCALE), height: Math.round(56 * SCALE), borderRadius: Math.round(28 * SCALE), backgroundColor: Colors[colorScheme].primary, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 6, shadowOffset: { width: 0, height: 3 }, elevation: 4 }}
         accessibilityLabel={t('qibla_submit_manual_location')}
       >
-        <Ionicons name="locate" size={26} color={Colors[colorScheme].icon} />
+        <Ionicons name="locate" size={Math.round(26 * SCALE)} color={Colors[colorScheme].icon} />
       </TouchableOpacity>
     </SafeAreaView>
   );
 }
+
+// Scaled style values
+const FONT_COMPASS_MARK = Math.round(20 * SCALE);
+const FONT_DIRECTION_LABEL = Math.round(16 * SCALE);
+const FONT_DIRECTION_VALUE = Math.round(48 * SCALE);
+const FONT_ALIGNED_TEXT = Math.round(16 * SCALE);
+const COMPASS_CENTER_SIZE = Math.round(16 * SCALE);
+const COMPASS_BORDER_WIDTH = Math.max(1, Math.round(4 * SCALE));
+const COMPASS_PADDING_VERTICAL = Math.round(20 * SCALE);
+const MARGIN_TOP_QIBLA_INFO = Math.round(24 * SCALE);
+const NEEDLE_WIDTH = Math.max(2, Math.round(4 * SCALE));
+const NEEDLE_HEIGHT = Math.round(COMPASS_SIZE / 2 - 20 * SCALE);
+const NEEDLE_RADIUS = Math.max(1, Math.round(2 * SCALE));
+const LOCATION_CARD_MARGIN_TOP = Math.round(20 * SCALE);
+const LOCATION_CARD_RADIUS = Math.round(16 * SCALE);
+const LOCATION_CARD_PADDING = Math.round(20 * SCALE);
+const LOCATION_ROW_PADDING_VERTICAL = Math.round(8 * SCALE);
+const CENTER_CONTENT_PADDING = Math.round(16 * SCALE);
+const ALIGNED_TEXT_MARGIN_TOP = Math.round(8 * SCALE);
 
 const styles = StyleSheet.create({
   compassContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 20,
+    paddingVertical: COMPASS_PADDING_VERTICAL,
   },
   compassWrapper: {
     width: COMPASS_SIZE,
@@ -356,7 +356,7 @@ const styles = StyleSheet.create({
     width: COMPASS_SIZE,
     height: COMPASS_SIZE,
     borderRadius: COMPASS_SIZE / 2,
-    borderWidth: 4,
+    borderWidth: COMPASS_BORDER_WIDTH,
     position: 'relative',
     justifyContent: 'center',
     alignItems: 'center',
@@ -376,46 +376,46 @@ const styles = StyleSheet.create({
   compassMark: {
     position: 'absolute',
     fontWeight: 'bold',
-    fontSize: 20,
+    fontSize: FONT_COMPASS_MARK,
   },
   north: {
-    top: 12,
+    top: Math.round(12 * SCALE),
     left: '50%',
-    marginLeft: -10,
+    marginLeft: -Math.round(10 * SCALE),
   },
   east: {
-    right: 12,
+    right: Math.round(12 * SCALE),
     top: '50%',
-    marginTop: -12,
+    marginTop: -Math.round(12 * SCALE),
   },
   south: {
-    bottom: 12,
+    bottom: Math.round(12 * SCALE),
     left: '50%',
-    marginLeft: -10,
+    marginLeft: -Math.round(10 * SCALE),
   },
   west: {
-    left: 12,
+    left: Math.round(12 * SCALE),
     top: '50%',
-    marginTop: -12,
+    marginTop: -Math.round(12 * SCALE),
   },
   compassCenter: {
     position: 'absolute',
-    top: COMPASS_SIZE / 2 - 8,
-    left: COMPASS_SIZE / 2 - 8,
-    width: 16,
-    height: 16,
-    borderWidth: 2,
-    borderRadius: 8,
+    top: COMPASS_SIZE / 2 - COMPASS_CENTER_SIZE / 2,
+    left: COMPASS_SIZE / 2 - COMPASS_CENTER_SIZE / 2,
+    width: COMPASS_CENTER_SIZE,
+    height: COMPASS_CENTER_SIZE,
+    borderWidth: Math.max(1, Math.round(2 * SCALE)),
+    borderRadius: COMPASS_CENTER_SIZE / 2,
     zIndex: 3,
   },
   staticNeedle: {
     position: 'absolute',
     top: 0,
-    left: COMPASS_SIZE / 2 - 2,
-    width: 4,
-    height: COMPASS_SIZE / 2 - 20,
+    left: COMPASS_SIZE / 2 - NEEDLE_WIDTH / 2,
+    width: NEEDLE_WIDTH,
+    height: NEEDLE_HEIGHT,
     backgroundColor: '#F59E0B',
-    borderRadius: 2,
+    borderRadius: NEEDLE_RADIUS,
     zIndex: 5,
   },
   overlayMessage: {
@@ -428,28 +428,28 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   qiblaInfo: {
-    marginTop: 24,
+    marginTop: MARGIN_TOP_QIBLA_INFO,
     alignItems: 'center',
   },
   directionLabel: {
-    fontSize: 16,
-    marginBottom: 4,
+    fontSize: FONT_DIRECTION_LABEL,
+    marginBottom: Math.round(4 * SCALE),
   },
   directionValue: {
-    fontSize: 48,
+    fontSize: FONT_DIRECTION_VALUE,
     fontWeight: 'bold',
     fontFamily: 'monospace',
   },
   alignedText: {
-    fontSize: 16,
+    fontSize: FONT_ALIGNED_TEXT,
     fontWeight: 'bold',
-    marginTop: 8,
+    marginTop: ALIGNED_TEXT_MARGIN_TOP,
   },
   locationCard: {
-    marginTop: 20,
-    borderRadius: 16,
+    marginTop: LOCATION_CARD_MARGIN_TOP,
+    borderRadius: LOCATION_CARD_RADIUS,
     borderWidth: 1,
-    padding: 20,
+    padding: LOCATION_CARD_PADDING,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -459,17 +459,17 @@ const styles = StyleSheet.create({
   locationRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 8,
+    paddingVertical: LOCATION_ROW_PADDING_VERTICAL,
     borderBottomWidth: 1,
   },
   centerContent: {
     alignItems: 'center',
-    padding: 16,
+    padding: CENTER_CONTENT_PADDING,
   },
   refreshButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
+    paddingHorizontal: Math.round(20 * SCALE),
+    paddingVertical: Math.round(10 * SCALE),
+    borderRadius: Math.round(8 * SCALE),
   },
   kaabaIconOnCompass: {
     position: 'absolute',
@@ -482,6 +482,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.8,
     shadowRadius: 8,
     elevation: 8,
-    borderRadius: 16,
+    borderRadius: Math.round(16 * SCALE),
   },
 });
