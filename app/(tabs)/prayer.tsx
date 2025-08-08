@@ -4,7 +4,7 @@ import { PrayerKey } from '@/constants/Prayer';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { usePrayerTimes } from '@/hooks/usePrayerTimes';
 import { playAdhan } from '@/services/audio';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, SafeAreaView, ScrollView, Switch, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -17,6 +17,7 @@ export default function PrayerTab() {
     loading,
     error,
     permissionDenied,
+    timezoneChosen,
     rows,
     nextPrayerKey,
     nextPrayerTimeString,
@@ -30,6 +31,11 @@ export default function PrayerTab() {
     selectMockLocation,
   } = usePrayerTimes();
 
+  const [showSelection, setShowSelection] = useState<boolean>(false);
+  useEffect(() => {
+    setShowSelection(permissionDenied && !timezoneChosen);
+  }, [permissionDenied, timezoneChosen]);
+
   const FailsafePanel = () => (
     <View style={{ marginHorizontal: 16, marginTop: 8, padding: 14, backgroundColor: Colors[colorScheme].surface, borderRadius: 14 }}>
       <ThemedText style={{ color: Colors[colorScheme].primary, fontWeight: 'bold', fontSize: 16, marginBottom: 6 }}>{t('qibla_location_permission_info')}</ThemedText>
@@ -40,7 +46,7 @@ export default function PrayerTab() {
         {supportedTimezones.map((tz) => (
           <Pressable
             key={tz}
-            onPress={() => setTimezone(tz)}
+            onPress={() => { setTimezone(tz); setShowSelection(false); }}
             style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, backgroundColor: timezone === tz ? Colors[colorScheme].primary : Colors[colorScheme].surface, borderWidth: 1, borderColor: Colors[colorScheme].cardBorder }}
           >
             <ThemedText style={{ color: timezone === tz ? Colors[colorScheme].background : Colors[colorScheme].text }}>{tz}</ThemedText>
@@ -53,7 +59,7 @@ export default function PrayerTab() {
         {mockLocations.map((loc) => (
           <Pressable
             key={loc.id}
-            onPress={() => selectMockLocation(loc.id)}
+            onPress={() => { selectMockLocation(loc.id); setShowSelection(false); }}
             style={{ padding: 10, borderRadius: 8, backgroundColor: Colors[colorScheme].surface, borderWidth: 1, borderColor: Colors[colorScheme].cardBorder }}
           >
             <ThemedText style={{ color: Colors[colorScheme].text, fontWeight: 'bold' }}>{loc.label}</ThemedText>
@@ -61,8 +67,13 @@ export default function PrayerTab() {
           </Pressable>
         ))}
       </View>
+      <Pressable onPress={() => setShowSelection(false)} style={{ marginTop: 12, alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: Colors[colorScheme].cardBorder }}>
+        <ThemedText style={{ color: Colors[colorScheme].text }}>{t('close', { defaultValue: 'Close' })}</ThemedText>
+      </Pressable>
     </View>
   );
+
+  const shouldShowFailsafe = showSelection;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Colors[colorScheme].background }}>
@@ -81,7 +92,7 @@ export default function PrayerTab() {
           </View>
         )}
 
-        {permissionDenied && <FailsafePanel />}
+        {shouldShowFailsafe && <FailsafePanel />}
 
         {/* Next Prayer Countdown */}
         <View style={{ alignItems: 'center', marginVertical: 16 }}>
@@ -118,6 +129,12 @@ export default function PrayerTab() {
         <View style={{ marginHorizontal: 16, marginTop: 16, padding: 14, backgroundColor: Colors[colorScheme].surface, borderRadius: 14 }}>
           <ThemedText style={{ color: Colors[colorScheme].primary, fontWeight: 'bold', fontSize: 16, marginBottom: 8 }}>{t('reminders')}</ThemedText>
           <ThemedText style={{ color: Colors[colorScheme].text, marginBottom: 8 }}>{t('toggle_reminders_info', { defaultValue: 'Enable or disable reminders per prayer above.' })}</ThemedText>
+          <Pressable
+            onPress={() => setShowSelection(true)}
+            style={{ alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 8, backgroundColor: Colors[colorScheme].surface, borderRadius: 8, borderWidth: 1, borderColor: Colors[colorScheme].cardBorder, marginBottom: 8 }}
+          >
+            <ThemedText style={{ color: Colors[colorScheme].text }}>{t('change_location_timezone', { defaultValue: 'Change Location / Timezone' })}</ThemedText>
+          </Pressable>
           <Pressable
             onPress={() => playAdhan({ uri: 'https://cdn.islamic.network/adhan/mp3/adhan_makkah.mp3' })}
             style={{ alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 8, backgroundColor: Colors[colorScheme].primary, borderRadius: 8 }}

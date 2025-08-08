@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useLocation } from '@/hooks/useLocation';
-import { computeCountdown, fetchPrayerTimesFromApi, findNextPrayer, formatTimeHHMM, PrayerTimesMap, toDisplayRows } from '@/utils/prayerTimes';
+import { MOCK_LOCATIONS } from '@/constants/MockLocations';
 import { NOTIFIABLE_PRAYER_KEYS, PrayerKey } from '@/constants/Prayer';
-import { cancelPrayerNotifications, initNotifications, schedulePrayerNotifications } from '@/services/notifications';
 import { DEFAULT_TIMEZONE, SUPPORTED_TIMEZONES, SupportedTimezone } from '@/constants/Timezones';
-import { MOCK_LOCATIONS, MockLocation } from '@/constants/MockLocations';
+import { useLocation } from '@/hooks/useLocation';
+import { cancelPrayerNotifications, initNotifications, schedulePrayerNotifications } from '@/services/notifications';
+import { computeCountdown, fetchPrayerTimesFromApi, findNextPrayer, formatTimeHHMM, PrayerTimesMap, toDisplayRows } from '@/utils/prayerTimes';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 const STORAGE_REMINDER_MAP_KEY = '@prayer_reminders_enabled_map_v1';
 const STORAGE_TIMEZONE_KEY = '@prayer_selected_timezone_v1';
@@ -27,6 +27,7 @@ export function usePrayerTimes() {
   const countdownTickerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [now, setNow] = useState<Date>(new Date());
   const [selectedTimezone, setSelectedTimezone] = useState<SupportedTimezone>(DEFAULT_TIMEZONE);
+  const [timezoneChosen, setTimezoneChosen] = useState<boolean>(false);
 
   // Load reminder prefs and timezone
   useEffect(() => {
@@ -42,6 +43,7 @@ export function usePrayerTimes() {
         const tz = await AsyncStorage.getItem(STORAGE_TIMEZONE_KEY);
         if (tz && SUPPORTED_TIMEZONES.includes(tz as SupportedTimezone)) {
           setSelectedTimezone(tz as SupportedTimezone);
+          setTimezoneChosen(true);
         }
       } catch {}
     })();
@@ -145,6 +147,7 @@ export function usePrayerTimes() {
 
   const setTimezone = useCallback(async (tz: SupportedTimezone) => {
     setSelectedTimezone(tz);
+    setTimezoneChosen(true);
     try {
       await AsyncStorage.setItem(STORAGE_TIMEZONE_KEY, tz);
     } catch {}
@@ -173,6 +176,7 @@ export function usePrayerTimes() {
     // manual selection support
     supportedTimezones: SUPPORTED_TIMEZONES,
     timezone: selectedTimezone,
+    timezoneChosen,
     setTimezone,
     mockLocations: MOCK_LOCATIONS,
     selectMockLocation,
