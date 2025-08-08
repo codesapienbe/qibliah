@@ -1,3 +1,4 @@
+import { logError } from '@/utils/logger';
 import React, { useRef, useState } from 'react';
 
 import { askGroq } from '@/api';
@@ -16,16 +17,16 @@ import * as Sharing from 'expo-sharing';
 import * as Speech from 'expo-speech';
 import { useTranslation } from 'react-i18next';
 import {
-  FlatList,
-  Keyboard,
-  KeyboardAvoidingView,
-  Platform,
-  SafeAreaView,
-  StyleSheet,
-  Switch,
-  TextInput,
-  TouchableOpacity,
-  View
+    FlatList,
+    Keyboard,
+    KeyboardAvoidingView,
+    Platform,
+    SafeAreaView,
+    StyleSheet,
+    Switch,
+    TextInput,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import Markdown from 'react-native-markdown-display';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -101,8 +102,9 @@ export default function HomeScreen() {
       if (!result.canceled && result.assets && result.assets.length > 0) {
         alert('Selected file: ' + result.assets[0].uri);
       }
-    } catch (e) {
-      alert('Error picking file');
+    } catch (e: any) {
+      const code = await logError(e, 'HomeScreen:handlePickFile');
+      alert('Error picking file [' + code + ']');
     }
   };
 

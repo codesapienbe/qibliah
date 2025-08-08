@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import Voice from 'react-native-voice';
+import { logError } from '@/utils/logger';
 
 export function useVoiceInput() {
   const [listening, setListening] = useState(false);
@@ -24,9 +25,13 @@ export function useVoiceInput() {
     Voice.onSpeechPartialResults = (e: any) => {
       if (isMounted.current) setPartial(e.value?.[0] || '');
     };
-    Voice.onSpeechError = (e: any) => {
-      if (isMounted.current) setError(e.error?.message || 'Unknown error');
+    Voice.onSpeechError = async (e: any) => {
+      const message = e.error?.message || 'Unknown error';
+      if (isMounted.current) setError(message);
       setListening(false);
+      try {
+        await logError(new Error(message), 'useVoiceInput:onSpeechError');
+      } catch {}
     };
     return () => {
       isMounted.current = false;
@@ -42,6 +47,7 @@ export function useVoiceInput() {
       await Voice.start(lang);
     } catch (e: any) {
       setError(e.message || 'Could not start voice recognition');
+      try { await logError(e, 'useVoiceInput:start'); } catch {}
     }
   };
 
@@ -50,6 +56,7 @@ export function useVoiceInput() {
       await Voice.stop();
     } catch (e: any) {
       setError(e.message || 'Could not stop voice recognition');
+      try { await logError(e, 'useVoiceInput:stop'); } catch {}
     }
   };
 

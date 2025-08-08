@@ -15,6 +15,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { Image } from 'react-native';
+import { initNotifications } from '@/services/notifications';
+import { logError } from '@/utils/logger';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -33,6 +35,28 @@ export default function RootLayout() {
       }
       setLangReady(true);
     })();
+  }, []);
+
+  // Initialize notifications and set global error handler
+  React.useEffect(() => {
+    initNotifications().catch(() => {});
+
+    try {
+      const anyGlobal: any = global as any;
+      if (anyGlobal?.ErrorUtils?.setGlobalHandler) {
+        const previousHandler = anyGlobal.ErrorUtils.getGlobalHandler
+          ? anyGlobal.ErrorUtils.getGlobalHandler()
+          : null;
+        anyGlobal.ErrorUtils.setGlobalHandler((err: any, isFatal?: boolean) => {
+          logError(err, isFatal ? 'GlobalErrorHandler:Fatal' : 'GlobalErrorHandler').catch(() => {});
+          if (previousHandler) {
+            try { previousHandler(err, isFatal); } catch {}
+          }
+        });
+      }
+    } catch {
+      // best-effort only
+    }
   }, []);
 
   if (!loaded || !langReady) {

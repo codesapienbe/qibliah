@@ -1,7 +1,9 @@
+import { getAyahByNumber } from '@/api';
 import { ThemedText } from '@/components/ThemedText';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
-import React, { useMemo, useState } from 'react';
+import { logError } from '@/utils/logger';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -43,6 +45,9 @@ const ISLAMIC_MONTHS = [
    'rabi_al_awwal', 'rabi_al_thani', 'jumada_al_awwal', 'jumada_al_thani',
   'rajab', 'shaban', 'ramadan', 'shawwal', 'dhu_al_qidah', 'dhu_al_hijjah'
 ];
+
+// Quran constants
+const TOTAL_AYAHS = 6236;
 
 // Utility functions
 function getDaysInMonth(year: number, month: number): number {
@@ -87,6 +92,18 @@ function getCountdown(now: Date, nextPrayerTime: string): { hours: number; minut
 function getIslamicMonthName(month: number, t: any) {
   return t(ISLAMIC_MONTHS[month % 12]);
 }
+function dateToAyahIndex(date: Date): number {
+  // Deterministic mapping within 1..TOTAL_AYAHS using a simple mixed hash of Y/M/D
+  const y = date.getFullYear();
+  const m = date.getMonth() + 1;
+  const d = date.getDate();
+  let hash = y * 374 + m * 31 + d;
+  hash = (hash ^ (hash << 13)) >>> 0;
+  hash = (hash ^ (hash >> 7)) >>> 0;
+  hash = (hash ^ (hash << 17)) >>> 0;
+  const idx = (hash % TOTAL_AYAHS) + 1;
+  return idx;
+}
 
 export default function CalendarTab() {
   const colorScheme = useColorScheme() ?? 'light';
@@ -95,6 +112,7 @@ export default function CalendarTab() {
   const today = new Date();
   const [currentDate, setCurrentDate] = useState(today);
   const [selectedDate, setSelectedDate] = useState(today);
+  const [ayah, setAyah] = useState<{ text: string; surah: string; numberInSurah: number } | null>(null);
 
   // Calendar navigation
   const year = currentDate.getFullYear();
@@ -130,6 +148,22 @@ export default function CalendarTab() {
       year === selectedDate.getFullYear()
     );
   };
+
+  // Fetch a deterministic "random" ayah for the selected date
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const idx = dateToAyahIndex(selectedDate);
+      try {
+        const res = await getAyahByNumber(idx);
+        if (!cancelled) setAyah(res);
+      } catch (e: any) {
+        await logError(e, 'Calendar:getAyahByNumber');
+        if (!cancelled) setAyah(null);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [selectedDate]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Colors[colorScheme].background }}>
@@ -185,7 +219,7 @@ export default function CalendarTab() {
                     elevation: selected ? 2 : 0,
                     borderWidth: todayCell && !selected ? 1 : 0,
                     borderColor: todayCell && !selected ? Colors[colorScheme].primary : 'transparent',
-                    transform: selected ? [{ scale: 1.08 }] : undefined,
+                    ...(selected ? { transform: [{ scale: 1.08 }] } : {}),
                   }}
                   activeOpacity={day !== null ? 0.7 : 1}
                 >
@@ -201,11 +235,11 @@ export default function CalendarTab() {
               );
             })}
           </View>
-          {/* Word of the Day */}
+          {/* Word of the Day tied to selected date */}
           <View style={{ marginHorizontal: 16, marginTop: 12, padding: 14, backgroundColor: Colors[colorScheme].surface, borderRadius: 14, alignItems: 'center' }}>
             <ThemedText style={{ color: Colors[colorScheme].primary, fontWeight: 'bold', fontSize: 16, marginBottom: 4 }}>{t('word_of_the_day')}</ThemedText>
-            <ThemedText style={{ color: Colors[colorScheme].text, fontSize: 15, textAlign: 'center' }} numberOfLines={3}>
-              {t('word_of_the_day_quote')}
+            <ThemedText style={{ color: Colors[colorScheme].text, fontSize: 15, textAlign: 'center' }} numberOfLines={4}>
+              {ayah ? `${ayah.text}\n— ${ayah.surah} ${ayah.numberInSurah}` : t('word_of_the_day_quote')}
             </ThemedText>
           </View>
         </View>

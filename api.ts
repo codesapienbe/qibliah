@@ -1,6 +1,7 @@
 // Quran and Ollama API utility
 // NOTE: You must install axios: npm install axios
 import axios from 'axios';
+import { logError } from '@/utils/logger';
 
 /**
  * Search the Quran using alquran.cloud API.
@@ -14,7 +15,8 @@ export async function searchQuran(query: string, lang: string = 'en'): Promise<a
     const response = await axios.get(url);
     return response.data;
   } catch (error: any) {
-    throw new Error('Quran API error: ' + error.message);
+    const code = await logError(error, 'api:searchQuran');
+    throw new Error(`Quran API error [${code}]: ${error.message}`);
   }
 }
 
@@ -34,7 +36,8 @@ export async function askOllama(message: string, endpoint: string = 'http://loca
     // Adjust this if Ollama returns a different structure
     return response.data.response || response.data;
   } catch (error: any) {
-    throw new Error('Ollama API error: ' + error.message);
+    const code = await logError(error, 'api:askOllama');
+    throw new Error(`Ollama API error [${code}]: ${error.message}`);
   }
 }
 
@@ -134,17 +137,8 @@ The Holy Quran teaches us in Surah [Name], verse [number]: '[Accurate verse tran
 
 May this guidance from Allah's Holy Book bring you peace and clarity. Is there anything else from the Quran I can help you with?
 
-Barakallahu feeki/feeka (May Allah bless you)."
-
-## Important Reminders
-- Maintain accuracy in all Quranic citations - never approximate or paraphrase incorrectly
-- Show deep reverence for the Quran in your language and tone
-- Remember you are serving a diverse Muslim community with varying levels of knowledge
-- Keep responses accessible while maintaining scholarly accuracy
-- Always acknowledge Allah as the source of all wisdom and guidance
-
-Your mission is to be a bridge between modern Muslims and the timeless wisdom of the Holy Quran, helping users find spiritual guidance, comfort, and knowledge directly from Allah's revealed word.
-` },
+Barakallahu feeki/feeka (May Allah bless you).` }
+          ,
           { role: 'user', content: message }
         ],
         max_tokens: 5000,
@@ -160,7 +154,8 @@ Your mission is to be a bridge between modern Muslims and the timeless wisdom of
     // Groq returns OpenAI-compatible response
     return response.data.choices[0].message.content.trim();
   } catch (error: any) {
-    throw new Error('Groq API error: ' + (error.response?.data?.error?.message || error.message));
+    const code = await logError(error, 'api:askGroq');
+    throw new Error('Groq API error [' + code + ']: ' + (error.response?.data?.error?.message || error.message));
   }
 }
 
@@ -190,6 +185,35 @@ export async function askGroqWithHistory(chatHistory: Array<{role: string, conte
     );
     return response.data.choices[0].message.content.trim();
   } catch (error: any) {
-    throw new Error('Groq API error: ' + (error.response?.data?.error?.message || error.message));
+    const code = await logError(error, 'api:askGroqWithHistory');
+    throw new Error('Groq API error [' + code + ']: ' + (error.response?.data?.error?.message || error.message));
+  }
+}
+
+/**
+ * Fetch an ayah by its global number. Attempts to include an English translation as fallback.
+ * @param ayahNumber 1..6236
+ */
+export async function getAyahByNumber(ayahNumber: number): Promise<{ text: string; surah: string; numberInSurah: number }> {
+  try {
+    // Request Arabic and an English translation together. If translation not available, we still get Arabic.
+    const url = `https://api.alquran.cloud/v1/ayah/${ayahNumber}/editions/quran-uthmani,en.asad`;
+    const response = await axios.get(url);
+    const data = response.data?.data;
+
+    // data may be an array of editions
+    const editions = Array.isArray(data) ? data : [data];
+    const en = editions.find((e: any) => e.edition?.identifier?.startsWith('en.'));
+    const ar = editions.find((e: any) => e.edition?.identifier === 'quran-uthmani') || editions[0];
+    const chosen = en || ar;
+
+    return {
+      text: chosen?.text || ar?.text || ' — ',
+      surah: chosen?.surah?.englishName || ar?.surah?.englishName || 'Quran',
+      numberInSurah: chosen?.numberInSurah || ar?.numberInSurah || 0,
+    };
+  } catch (error: any) {
+    const code = await logError(error, 'api:getAyahByNumber');
+    throw new Error(`Ayah fetch error [${code}]: ${error.message}`);
   }
 } 
