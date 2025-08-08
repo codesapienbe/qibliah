@@ -1,7 +1,7 @@
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import React from 'react';
-import { StyleSheet } from 'react-native';
+import { SafeAreaView, StyleSheet } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 
 const MASJIDS = [
@@ -384,20 +384,22 @@ export default function MasjidsTab() {
   const initialRegion = computeInitialRegion();
 
   return (
-    <MapView
-      style={{ flex: 1 }}
-      initialRegion={initialRegion}
-    >
-      {markers.map((m) => (
-        <Marker
-          key={m.id}
-          coordinate={{ latitude: m.coordinates[0], longitude: m.coordinates[1] }}
-          title={m.name}
-          description={m.address}
-          pinColor={Colors[colorScheme].secondary}
-        />
-      ))}
-    </MapView>
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors[colorScheme].background, paddingTop: 6 }}>
+      <MapView
+        style={{ flex: 1 }}
+        initialRegion={initialRegion}
+      >
+        {markers.map((m) => (
+          <Marker
+            key={m.id}
+            coordinate={{ latitude: m.coordinates[0], longitude: m.coordinates[1] }}
+            title={m.name}
+            description={m.address}
+            pinColor={Colors[colorScheme].secondary}
+          />
+        ))}
+      </MapView>
+    </SafeAreaView>
   );
 }
 

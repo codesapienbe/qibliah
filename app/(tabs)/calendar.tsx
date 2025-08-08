@@ -168,7 +168,7 @@ export default function CalendarTab() {
   }, [selectedDate]);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: Colors[colorScheme].background }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors[colorScheme].background, paddingTop: 6 }}>
       {/* Month Info (no background) */}
       <View style={{ alignItems: 'center', marginBottom: 8 }}>
         <ThemedText style={{ fontSize: 22, fontWeight: 'bold', color: Colors[colorScheme].primary }}>{getIslamicMonthName(month, t)} {year}</ThemedText>

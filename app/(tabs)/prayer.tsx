@@ -77,7 +77,7 @@ export default function PrayerTab() {
   const shouldShowFailsafe = showSelection;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: Colors[colorScheme].background }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors[colorScheme].background, paddingTop: 6 }}>
       <ScrollView contentContainerStyle={{ flexGrow: 1, backgroundColor: Colors[colorScheme].background }}>
         {loading && (
           <View style={{ paddingVertical: 8 }}>

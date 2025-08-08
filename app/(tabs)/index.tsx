@@ -325,7 +325,7 @@ export default function HomeScreen() {
 
   // Add a modal or prompt for API key
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: Colors[colorScheme].background }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors[colorScheme].background, paddingTop: 6 }}>
       {/* Remember Chat Modal */}
       {showRememberModal && (
         <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.4)', zIndex: 100, justifyContent: 'center', alignItems: 'center' }}>

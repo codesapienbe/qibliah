@@ -11,7 +11,8 @@ import { calculateQibla, haversineDistance } from '@/utils/qibla';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import MapView, { Marker, Polyline } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const COMPASS_SIZE = 240;
@@ -27,13 +28,9 @@ export default function QiblaTab() {
   const { t } = useTranslation();
   const {
     location,
-    errorMsg: locationError,
     loading: locationLoading,
-    refreshLocation,
     requestPermission: requestLocationPermission,
     getCurrentLocation,
-    permissionDenied,
-    setManualLocation,
   } = useLocation();
   const {
     heading,
@@ -43,9 +40,8 @@ export default function QiblaTab() {
     startCompass,
     stopCompass,
   } = useQiblaDirection();
-  const [manualLat, setManualLat] = React.useState('');
-  const [manualLng, setManualLng] = React.useState('');
-  const [manualError, setManualError] = React.useState('');
+  const windowHeight = Dimensions.get('window').height;
+  const mapHeight = Math.round(windowHeight * 0.33);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -66,17 +62,12 @@ export default function QiblaTab() {
       };
     }, [requestLocationPermission, getCurrentLocation, requestCompassPermission, startCompass, stopCompass])
   );
-
-  const handleManualLocationSubmit = () => {
-    const lat = parseFloat(manualLat);
-    const lng = parseFloat(manualLng);
-    if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-      setManualError(t('qibla_invalid_latlng'));
-      return;
+  const handleLocate = React.useCallback(async () => {
+    const granted = await requestLocationPermission();
+    if (granted) {
+      await getCurrentLocation();
     }
-    setManualError('');
-    setManualLocation({ lat, lng });
-  };
+  }, [requestLocationPermission, getCurrentLocation]);
 
   // Debug logging
   React.useEffect(() => {
@@ -96,11 +87,14 @@ export default function QiblaTab() {
   let qiblaDegrees: number | null = null;
   let distance: string | null = null;
   let coordsStr: string | null = null;
+  let userLatLng: { latitude: number; longitude: number } | null = null;
+  const kaabaLatLng = { latitude: KAABA.lat, longitude: KAABA.lng };
   
   if (location) {
     qiblaDegrees = Math.round(calculateQibla(location.lat, location.lng, KAABA.lat, KAABA.lng));
     distance = `${Math.round(haversineDistance(location.lat, location.lng, KAABA.lat, KAABA.lng))} km`;
     coordsStr = `${location.lat.toFixed(4)}°N, ${location.lng.toFixed(4)}°E`;
+    userLatLng = { latitude: location.lat, longitude: location.lng };
   }
 
   // Compass rotation: keep North pointing up
@@ -129,52 +123,8 @@ export default function QiblaTab() {
   const kaabaIconSize = isNearQibla ? 64 : 32; // 2x larger when near Qibla
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: Colors[colorScheme].background }}>
-      {permissionDenied && !location ? (
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <ThemedText type="title" style={{ fontWeight: 'bold', color: Colors[colorScheme].primary, fontSize: 28, marginBottom: 16 }}>
-            {t('qibla_enter_location')}
-          </ThemedText>
-          <TextInput
-            style={{ borderWidth: 1, borderColor: Colors[colorScheme].cardBorder, borderRadius: 8, padding: 10, width: 220, marginBottom: 12, color: Colors[colorScheme].text }}
-            placeholder={t('qibla_latitude_placeholder')}
-            placeholderTextColor={Colors[colorScheme].text}
-            value={manualLat}
-            onChangeText={setManualLat}
-            keyboardType="numeric"
-          />
-          <TextInput
-            style={{ borderWidth: 1, borderColor: Colors[colorScheme].cardBorder, borderRadius: 8, padding: 10, width: 220, marginBottom: 12, color: Colors[colorScheme].text }}
-            placeholder={t('qibla_longitude_placeholder')}
-            placeholderTextColor={Colors[colorScheme].text}
-            value={manualLng}
-            onChangeText={setManualLng}
-            keyboardType="numeric"
-          />
-          {manualError ? <Text style={{ color: Colors[colorScheme].error, marginBottom: 8 }}>{manualError}</Text> : null}
-          <TouchableOpacity
-            onPress={handleManualLocationSubmit}
-            style={{
-              backgroundColor: Colors[colorScheme].primary,
-              borderRadius: 8,
-              padding: 10,
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: 50,
-              alignSelf: 'center',
-              marginBottom: 8,
-            }}
-            accessibilityLabel={t('qibla_submit_manual_location')}
-          >
-            <Ionicons name="checkmark-circle" size={28} color={Colors[colorScheme].icon} />
-          </TouchableOpacity>
-          <Text style={{ color: Colors[colorScheme].text, marginTop: 20, textAlign: 'center', fontSize: 13 }}>
-            {t('qibla_location_permission_info', { defaultValue: 'Location permission required for automatic detection.' })}
-          </Text>
-        </View>
-      ) : (
-        <>
-          <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 16, paddingTop: 0, backgroundColor: Colors[colorScheme].background }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors[colorScheme].background, paddingTop: 6 }}>
+      <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 16, paddingTop: 0, backgroundColor: Colors[colorScheme].background, paddingBottom: 80 }}>
             {/* Compass & Info */}
             <View style={styles.compassContainer}>
               <View style={styles.compassWrapper}>
@@ -261,7 +211,7 @@ export default function QiblaTab() {
                       <Text style={{fontSize: 32}}>°</Text>
                     </ThemedText>
                     {isNearQibla && (
-                      <ThemedText style={[styles.alignedText, { color: Colors[colorScheme].primary }]}>
+                      <ThemedText style={[styles.alignedText, { color: Colors[colorScheme].primary }]}> 
                         {t('qibla_facing_qibla')}
                       </ThemedText>
                     )}
@@ -278,7 +228,62 @@ export default function QiblaTab() {
                 )}
               </View>
             </View>
-            
+
+            {/* MapView: shows path and distance between User and Kaaba */}
+            <View style={{ height: mapHeight, borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: Colors[colorScheme].cardBorder, backgroundColor: Colors[colorScheme].surface }}>
+              <MapView
+                style={{ flex: 1 }}
+                initialRegion={{
+                  latitude: userLatLng ? (userLatLng.latitude + kaabaLatLng.latitude) / 2 : kaabaLatLng.latitude,
+                  longitude: userLatLng ? (userLatLng.longitude + kaabaLatLng.longitude) / 2 : kaabaLatLng.longitude,
+                  latitudeDelta: userLatLng ? Math.max(20, Math.abs(userLatLng.latitude - kaabaLatLng.latitude) * 2) : 20,
+                  longitudeDelta: userLatLng ? Math.max(20, Math.abs(userLatLng.longitude - kaabaLatLng.longitude) * 2) : 20,
+                }}
+                showsCompass={false}
+                showsBuildings={false}
+                pitchEnabled={false}
+                rotateEnabled={false}
+              >
+                {/* Kaaba Marker */}
+                <Marker coordinate={kaabaLatLng} anchor={{ x: 0.5, y: 0.9 }}>
+                  <View style={{ padding: 6, backgroundColor: Colors[colorScheme].surface, borderRadius: 12, borderWidth: 1, borderColor: Colors[colorScheme].cardBorder }}>
+                    <KaabaIcon size={22} />
+                  </View>
+                </Marker>
+                {/* User Marker */}
+                {userLatLng && (
+                  <Marker coordinate={userLatLng} anchor={{ x: 0.5, y: 0.9 }}>
+                    <View style={{ padding: 6, backgroundColor: Colors[colorScheme].surface, borderRadius: 12, borderWidth: 1, borderColor: Colors[colorScheme].cardBorder }}>
+                      <Ionicons name="home" size={20} color={Colors[colorScheme].primary} />
+                    </View>
+                  </Marker>
+                )}
+                {/* Line and distance label */}
+                {userLatLng && (
+                  <>
+                    <Polyline
+                      coordinates={[userLatLng, kaabaLatLng]}
+                      geodesic
+                      strokeColor={Colors[colorScheme].primary}
+                      strokeWidth={3}
+                    />
+                    {/* Distance label at midpoint */}
+                    <Marker
+                      coordinate={{
+                        latitude: (userLatLng.latitude + kaabaLatLng.latitude) / 2,
+                        longitude: (userLatLng.longitude + kaabaLatLng.longitude) / 2,
+                      }}
+                      anchor={{ x: 0.5, y: 0.5 }}
+                    >
+                      <View style={{ paddingVertical: 6, paddingHorizontal: 10, backgroundColor: Colors[colorScheme].surface, borderRadius: 12, borderWidth: 1, borderColor: Colors[colorScheme].cardBorder, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 4, elevation: 2 }}>
+                        <ThemedText style={{ color: Colors[colorScheme].text, fontWeight: 'bold' }}>{distance}</ThemedText>
+                      </View>
+                    </Marker>
+                  </>
+                )}
+              </MapView>
+            </View>
+
             {/* Location Details Card */}
             <ThemedView style={[styles.locationCard, { 
               backgroundColor: Colors[colorScheme].surface, 
@@ -291,33 +296,21 @@ export default function QiblaTab() {
                     {t('qibla_getting_location')}
                   </ThemedText>
                 </View>
-              ) : locationError ? (
-                <View style={styles.centerContent}>
-                  <ThemedText style={{ color: Colors[colorScheme].error, textAlign: 'center', marginBottom: 10 }}>
-                    {locationError}
-                  </ThemedText>
-                  <TouchableOpacity 
-                    onPress={refreshLocation}
-                    style={[styles.refreshButton, { backgroundColor: Colors[colorScheme].primary }]}
-                  >
-                    <ThemedText style={{ color: Colors[colorScheme].icon, fontWeight: 'bold' }}>{t('try_again')}</ThemedText>
-                  </TouchableOpacity>
-                </View>
               ) : location ? (
                 <>
-                  <View style={[styles.locationRow, { borderBottomColor: Colors[colorScheme].cardBorder }]}>
+                  <View style={[styles.locationRow, { borderBottomColor: Colors[colorScheme].cardBorder }]}> 
                     <ThemedText style={{ color: Colors[colorScheme].text }}>{t('qibla_your_location')}:</ThemedText>
                     <ThemedText style={{ color: Colors[colorScheme].text, fontFamily: 'monospace' }}>
                       {coordsStr ? <Text>{coordsStr}</Text> : coordsStr !== null ? <Text>{coordsStr}</Text> : <Text />}
                     </ThemedText>
                   </View>
-                  <View style={[styles.locationRow, { borderBottomColor: Colors[colorScheme].cardBorder }]}>
+                  <View style={[styles.locationRow, { borderBottomColor: Colors[colorScheme].cardBorder }]}> 
                     <ThemedText style={{ color: Colors[colorScheme].text }}>{t('qibla_distance_to_mecca')}:</ThemedText>
                     <ThemedText style={{ color: Colors[colorScheme].text, fontWeight: 'bold' }}>
                       {distance ? <Text>{distance}</Text> : distance !== null ? <Text>{distance}</Text> : <Text />}
                     </ThemedText>
                   </View>
-                  <View style={[styles.locationRow, { borderBottomWidth: 0 }]}>
+                  <View style={[styles.locationRow, { borderBottomWidth: 0 }]}> 
                     <ThemedText style={{ color: Colors[colorScheme].text }}>{t('qibla_kaaba_mecca')}:</ThemedText>
                     <ThemedText style={{ color: Colors[colorScheme].text, fontFamily: 'monospace' }}>
                       <Text>{KAABA.lat.toFixed(4)}</Text>
@@ -329,15 +322,20 @@ export default function QiblaTab() {
                 </>
               ) : (
                 <View style={styles.centerContent}>
-                  <ThemedText style={{ color: Colors[colorScheme].error }}>
-                    {t('qibla_location_not_available')}
-                  </ThemedText>
+                  {/* Intentionally no error message to keep UI clean */}
                 </View>
               )}
             </ThemedView>
-          </ScrollView>
-        </>
-      )}
+      </ScrollView>
+
+      {/* Floating locate button */}
+      <TouchableOpacity
+        onPress={handleLocate}
+        style={{ position: 'absolute', right: 20, bottom: 24, width: 56, height: 56, borderRadius: 28, backgroundColor: Colors[colorScheme].primary, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 6, shadowOffset: { width: 0, height: 3 }, elevation: 4 }}
+        accessibilityLabel={t('qibla_submit_manual_location')}
+      >
+        <Ionicons name="locate" size={26} color={Colors[colorScheme].icon} />
+      </TouchableOpacity>
     </SafeAreaView>
   );
 }
