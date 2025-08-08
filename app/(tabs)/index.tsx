@@ -18,6 +18,7 @@ import * as Sharing from 'expo-sharing';
 import * as Speech from 'expo-speech';
 import { useTranslation } from 'react-i18next';
 import {
+  Alert,
   FlatList,
   Keyboard,
   KeyboardAvoidingView,
@@ -60,6 +61,9 @@ export default function HomeScreen() {
   const [showRememberModal, setShowRememberModal] = useState(false);
   const [pendingRemember, setPendingRemember] = useState(rememberChat);
   const { listening, error: voiceError, results: voiceResults, partial, start, stop } = useVoiceInput();
+  const [expandedMessageIds, setExpandedMessageIds] = useState<Set<string>>(new Set());
+  const MAX_MESSAGE_CHARS = 1000;
+  const [showInfo, setShowInfo] = useState(false);
 
   React.useEffect(() => {
     // Load Groq API token from secure storage on mount
@@ -92,6 +96,26 @@ export default function HomeScreen() {
   const speechLang = 'en-US';
   const ttsEnabled = false;
   const selectedVoice = null;
+
+  const handleClearChat = () => {
+    Alert.alert(
+      t('clear_chat_title', { defaultValue: 'Clear chat?' }),
+      t('clear_chat_message', { defaultValue: 'This will remove the conversation.' }),
+      [
+        { text: t('cancel'), style: 'cancel' as const },
+        {
+          text: t('clear', { defaultValue: 'Clear' }),
+          style: 'destructive' as const,
+          onPress: () => {
+            setMessages([{ ...INITIAL_MESSAGES[0], text: t('assistant_welcome') }]);
+          }
+        },
+      ]
+    );
+  };
+
+  const handleShowInfo = () => setShowInfo(true);
+  const handleCloseInfo = () => setShowInfo(false);
 
   // Ensure these handlers are defined here
   const handlePickFile = async () => {
@@ -147,6 +171,14 @@ export default function HomeScreen() {
     /\bdoei\b/i,
     /\bpeace\b/i
   ];
+
+  const toggleExpandMessage = (id: string) => {
+    setExpandedMessageIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
 
   const handleSend = async () => {
     if (!input.trim() || sending) return;
@@ -277,6 +309,10 @@ export default function HomeScreen() {
     if (!isUser && index > 0 && messages[index - 1]?.sender === 'user') {
       userPrompt = messages[index - 1].text;
     }
+    const isLong = typeof item.text === 'string' && item.text.length > MAX_MESSAGE_CHARS;
+    const isExpanded = expandedMessageIds.has(item.id);
+    const displayText = isLong && !isExpanded ? item.text.slice(0, MAX_MESSAGE_CHARS) + '…' : item.text;
+
     return (
       <View style={[styles.messageRow, isUser ? styles.userRow : styles.aiRow]}>
         {!isUser && renderAvatar('ai', item.text, userPrompt)}
@@ -289,35 +325,53 @@ export default function HomeScreen() {
           ]}
         >
           {isUser ? (
-            <ThemedText style={{ color: Colors[colorScheme].text }}>{item.text}</ThemedText>
+            <>
+              <ThemedText style={{ color: isUser ? Colors[colorScheme].background : Colors[colorScheme].text }}>{displayText}</ThemedText>
+              {isLong && (
+                <TouchableOpacity onPress={() => toggleExpandMessage(item.id)} style={{ marginTop: 6 }}>
+                  <ThemedText style={{ color: isUser ? Colors[colorScheme].background : Colors[colorScheme].primary, fontWeight: 'bold' }}>
+                    {isExpanded ? t('show_less', { defaultValue: 'Show less' }) : t('read_more', { defaultValue: 'Read more' })}
+                  </ThemedText>
+                </TouchableOpacity>
+              )}
+            </>
           ) : (
-            <Markdown
-              style={{
-                container: { backgroundColor: Colors[colorScheme].surface },
-                body: { color: Colors[colorScheme].text, fontSize: 16, lineHeight: 24 },
-                paragraph: { color: Colors[colorScheme].text },
-                heading1: { color: Colors[colorScheme].text },
-                heading2: { color: Colors[colorScheme].text },
-                heading3: { color: Colors[colorScheme].text },
-                heading4: { color: Colors[colorScheme].text },
-                heading5: { color: Colors[colorScheme].text },
-                heading6: { color: Colors[colorScheme].text },
-                link: { color: Colors[colorScheme].primary },
-                list_item: { color: Colors[colorScheme].text },
-                bullet_list: { color: Colors[colorScheme].text },
-                ordered_list: { color: Colors[colorScheme].text },
-                code_inline: { color: Colors[colorScheme].text, backgroundColor: Colors[colorScheme].surface },
-                code_block: { color: Colors[colorScheme].text, backgroundColor: Colors[colorScheme].surface },
-                fence: { color: Colors[colorScheme].text, backgroundColor: Colors[colorScheme].surface },
-                blockquote: { color: Colors[colorScheme].text, borderLeftColor: Colors[colorScheme].primary },
-                table: { color: Colors[colorScheme].text },
-                th: { color: Colors[colorScheme].text },
-                tr: { color: Colors[colorScheme].text },
-                td: { color: Colors[colorScheme].text },
-              }}
-            >
-              {formatSurahAyatMessage({ text: item.text, language: i18n.language, t })}
-            </Markdown>
+            <>
+              <Markdown
+                style={{
+                  container: { backgroundColor: Colors[colorScheme].surface },
+                  body: { color: Colors[colorScheme].text, fontSize: 16, lineHeight: 24 },
+                  paragraph: { color: Colors[colorScheme].text },
+                  heading1: { color: Colors[colorScheme].text },
+                  heading2: { color: Colors[colorScheme].text },
+                  heading3: { color: Colors[colorScheme].text },
+                  heading4: { color: Colors[colorScheme].text },
+                  heading5: { color: Colors[colorScheme].text },
+                  heading6: { color: Colors[colorScheme].text },
+                  link: { color: Colors[colorScheme].primary },
+                  list_item: { color: Colors[colorScheme].text },
+                  bullet_list: { color: Colors[colorScheme].text },
+                  ordered_list: { color: Colors[colorScheme].text },
+                  code_inline: { color: Colors[colorScheme].text, backgroundColor: Colors[colorScheme].surface },
+                  code_block: { color: Colors[colorScheme].text, backgroundColor: Colors[colorScheme].surface },
+                  fence: { color: Colors[colorScheme].text, backgroundColor: Colors[colorScheme].surface },
+                  blockquote: { color: Colors[colorScheme].text, borderLeftColor: Colors[colorScheme].primary },
+                  table: { color: Colors[colorScheme].text },
+                  th: { color: Colors[colorScheme].text },
+                  tr: { color: Colors[colorScheme].text },
+                  td: { color: Colors[colorScheme].text },
+                }}
+              >
+                {formatSurahAyatMessage({ text: displayText, language: i18n.language, t })}
+              </Markdown>
+              {isLong && (
+                <TouchableOpacity onPress={() => toggleExpandMessage(item.id)} style={{ marginTop: 6 }}>
+                  <ThemedText style={{ color: Colors[colorScheme].primary, fontWeight: 'bold' }}>
+                    {isExpanded ? t('show_less', { defaultValue: 'Show less' }) : t('read_more', { defaultValue: 'Read more' })}
+                  </ThemedText>
+                </TouchableOpacity>
+              )}
+            </>
           )}
         </ThemedView>
         {isUser && renderAvatar('user')}
@@ -329,7 +383,17 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Colors[colorScheme].background, paddingTop: 6 }}>
       <View style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
-        <ThemedText style={{ fontSize: 22, fontWeight: 'bold', color: Colors[colorScheme].primary }}>Qibliah AI</ThemedText>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <ThemedText style={{ fontSize: 22, fontWeight: 'bold', color: Colors[colorScheme].primary }}>Qibliah AI</ThemedText>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <TouchableOpacity onPress={handleShowInfo} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Ionicons name="information-circle-outline" size={22} color={Colors[colorScheme].primary} />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handleClearChat} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Ionicons name="trash-outline" size={20} color={Colors[colorScheme].error} />
+            </TouchableOpacity>
+          </View>
+        </View>
         <ThemedText numberOfLines={1} style={{ marginTop: 4, color: Colors[colorScheme].secondary }}>
           {t('next_prayer')}: {nextPrayerKey ? t(nextPrayerKey.toLowerCase(), { defaultValue: nextPrayerKey }) : '—'} {nextPrayerTimeString ?? '—'} — {String(countdown.hours).padStart(2, '0')}:{String(countdown.minutes).padStart(2, '0')}:{String(countdown.seconds).padStart(2, '0')}
         </ThemedText>
@@ -361,6 +425,22 @@ export default function HomeScreen() {
                 onPress={() => setShowRememberModal(false)}
               >
                 <ThemedText style={{ color: Colors[colorScheme].icon, fontWeight: 'bold', fontSize: 16 }}>{t('cancel')}</ThemedText>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )}
+      {/* Info Panel */}
+      {showInfo && (
+        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.4)', zIndex: 100, justifyContent: 'center', alignItems: 'center' }}>
+          <View style={{ backgroundColor: Colors[colorScheme].surface, borderRadius: 16, padding: 24, width: '85%', maxWidth: 520 }}>
+            <ThemedText style={{ fontWeight: 'bold', fontSize: 18, marginBottom: 10, color: Colors[colorScheme].primary }}>{t('info', { defaultValue: 'Info' })}</ThemedText>
+            <ThemedText style={{ color: Colors[colorScheme].text, fontSize: 15, lineHeight: 22 }}>
+              {t('home_info_message', { defaultValue: 'Qibliah AI helps you chat, recite, and retrieve Islamic references. You can clear the conversation anytime using the trash icon.' })}
+            </ThemedText>
+            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 16 }}>
+              <TouchableOpacity onPress={handleCloseInfo} style={{ paddingVertical: 8, paddingHorizontal: 14, borderRadius: 8, backgroundColor: Colors[colorScheme].primary }}>
+                <ThemedText style={{ color: Colors[colorScheme].background, fontWeight: 'bold' }}>{t('close', { defaultValue: 'Close' })}</ThemedText>
               </TouchableOpacity>
             </View>
           </View>

@@ -493,7 +493,12 @@ export default function MasjidsTab() {
                       style={[styles.navigateBtn, { backgroundColor: Colors[colorScheme].primary }]}
                       activeOpacity={0.9}
                     >
-                      <Text style={[styles.navigateText, { color: Colors[colorScheme].icon }]}>{t('navigate', { defaultValue: 'Navigate' })}</Text>
+                      <Text style={[
+                        styles.navigateText,
+                        { color: colorScheme === 'dark' ? Colors[colorScheme].text : Colors[colorScheme].surface }
+                      ]}>
+                        {t('navigate', { defaultValue: 'Navigate' })}
+                      </Text>
                     </TouchableOpacity>
                   </View>
                 </View>
