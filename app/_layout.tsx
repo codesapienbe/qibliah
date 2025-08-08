@@ -14,7 +14,7 @@ import TimezoneSelection from '@/components/TimezoneSelection';
 
 import { SupportedTimezone } from '@/constants/Timezones';
 import { useColorScheme } from '@/hooks/useColorScheme';
-import { initNotifications } from '@/services/notifications';
+import { configureNotificationSound, initNotifications } from '@/services/notifications';
 import { logError } from '@/utils/logger';
 
 
@@ -47,6 +47,9 @@ export default function RootLayout() {
 
   // Initialize notifications and set global error handler
   React.useEffect(() => {
+    // Configure custom notification sound file names if present in the app bundle
+    // iOS expects the exact file name (with extension). Android channel prefers the resource name (without extension).
+    configureNotificationSound({ iosFileName: 'adhan.wav', androidFileName: 'adhan' });
     initNotifications().catch(() => {});
 
     try {

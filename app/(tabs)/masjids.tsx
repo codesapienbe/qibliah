@@ -1,8 +1,11 @@
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { BlurView } from 'expo-blur';
 import React from 'react';
-import { SafeAreaView, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { Linking, Platform, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const MASJIDS = [
   {
@@ -346,6 +349,14 @@ const MASJIDS = [
 
 export default function MasjidsTab() {
   const colorScheme = useColorScheme() ?? 'light';
+  const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
+  const [selectedMasjid, setSelectedMasjid] = React.useState<{
+    id: number;
+    name: string;
+    address: string;
+    coordinates: [number, number] | null;
+  } | null>(null);
 
   const markers = (MASJIDS.filter((m: any) => Array.isArray(m.coordinates) && m.coordinates.length === 2) as Array<{
     id: number;
@@ -383,22 +394,114 @@ export default function MasjidsTab() {
 
   const initialRegion = computeInitialRegion();
 
+  function openInMaps(name: string, address: string, coords?: [number, number] | null) {
+    const encodedName = encodeURIComponent(name);
+    const encodedAddress = encodeURIComponent(address);
+    if (Platform.OS === 'ios') {
+      if (coords && coords.length === 2) {
+        const [lat, lng] = coords;
+        // Apple Maps deep link
+        const url = `http://maps.apple.com/?daddr=${lat},${lng}&q=${encodedName}`;
+        Linking.openURL(url);
+      } else {
+        const url = `http://maps.apple.com/?daddr=${encodedAddress}&q=${encodedName}`;
+        Linking.openURL(url);
+      }
+    } else {
+      if (coords && coords.length === 2) {
+        const [lat, lng] = coords;
+        // Google Maps directions
+        const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&destination_place_id=&travelmode=driving`;
+        Linking.openURL(url);
+      } else {
+        const url = `https://www.google.com/maps/dir/?api=1&destination=${encodedAddress}&travelmode=driving`;
+        Linking.openURL(url);
+      }
+    }
+  }
+
+  const handleNavigate = () => {
+    if (!selectedMasjid) return;
+    openInMaps(selectedMasjid.name, selectedMasjid.address, selectedMasjid.coordinates || undefined);
+  };
+
+  const handleCancel = () => setSelectedMasjid(null);
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Colors[colorScheme].background, paddingTop: 6 }}>
-      <MapView
-        style={{ flex: 1 }}
-        initialRegion={initialRegion}
-      >
-        {markers.map((m) => (
-          <Marker
-            key={m.id}
-            coordinate={{ latitude: m.coordinates[0], longitude: m.coordinates[1] }}
-            title={m.name}
-            description={m.address}
-            pinColor={Colors[colorScheme].secondary}
-          />
-        ))}
-      </MapView>
+      <View style={{ flex: 1 }}>
+        <MapView
+          style={{ flex: 1 }}
+          initialRegion={initialRegion}
+          onPress={() => setSelectedMasjid(null)}
+          onMarkerPress={(e: any) => {
+            try {
+              const coord = e?.nativeEvent?.coordinate;
+              if (!coord) return;
+              // Find closest marker by coordinates
+              let best: any = null;
+              let bestDist = Number.POSITIVE_INFINITY;
+              for (const m of markers) {
+                const dLat = m.coordinates[0] - coord.latitude;
+                const dLng = m.coordinates[1] - coord.longitude;
+                const dist = dLat * dLat + dLng * dLng;
+                if (dist < bestDist) {
+                  bestDist = dist;
+                  best = m;
+                }
+              }
+              if (best) setSelectedMasjid(best);
+            } catch {}
+          }}
+        >
+          {markers.map((m) => (
+            <Marker
+              key={m.id}
+              coordinate={{ latitude: m.coordinates[0], longitude: m.coordinates[1] }}
+              pinColor={Colors[colorScheme].secondary}
+              onPress={() => setSelectedMasjid(m)}
+            />
+          ))}
+        </MapView>
+
+        {selectedMasjid && (
+          <View
+            pointerEvents="box-none"
+            style={{ position: 'absolute', left: 0, right: 0, bottom: Math.max(20, insets.bottom) + 80, zIndex: 10, elevation: 10 }}
+          >
+            <View style={styles.panelContainer}>
+              <BlurView intensity={30} tint={colorScheme === 'dark' ? 'dark' : 'light'} style={[styles.panelBlur, { elevation: 10 }] }>
+                <View style={[styles.panelContent, { borderColor: Colors[colorScheme].cardBorder }] }>
+                  <View style={{ flex: 1 }}>
+                    <View style={{ marginBottom: 4 }}>
+                      <Text style={[styles.panelTitle, { color: Colors[colorScheme].primary }]} numberOfLines={1}>{selectedMasjid.name}</Text>
+                    </View>
+                    <Text style={[styles.panelSubtitle, { color: Colors[colorScheme].text }]} numberOfLines={2}>
+                      {selectedMasjid.address}
+                    </Text>
+                  </View>
+                  <View style={styles.panelActions}>
+                    <TouchableOpacity
+                      onPress={handleCancel}
+                      style={[styles.cancelBtn, { borderColor: Colors[colorScheme].cardBorder, backgroundColor: Colors[colorScheme].surface }]}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={[styles.cancelText, { color: Colors[colorScheme].text }]}>{t('cancel')}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={handleNavigate}
+                      style={[styles.navigateBtn, { backgroundColor: Colors[colorScheme].primary }]}
+                      activeOpacity={0.9}
+                    >
+                      <Text style={[styles.navigateText, { color: Colors[colorScheme].icon }]}>{t('navigate', { defaultValue: 'Navigate' })}</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </BlurView>
+            </View>
+          </View>
+        )}
+      </View>
     </SafeAreaView>
   );
 }
@@ -406,5 +509,54 @@ export default function MasjidsTab() {
 const styles = StyleSheet.create({
   map: {
     flex: 1,
+  },
+  panelContainer: {
+    paddingHorizontal: 12,
+  },
+  panelBlur: {
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  panelContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderWidth: 1,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.6)',
+  },
+  panelTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  panelSubtitle: {
+    fontSize: 13,
+    opacity: 0.9,
+  },
+  panelActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  cancelBtn: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  cancelText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  navigateBtn: {
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+  },
+  navigateText: {
+    fontSize: 14,
+    fontWeight: '700',
   },
 }); 
