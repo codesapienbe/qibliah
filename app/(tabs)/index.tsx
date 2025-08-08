@@ -326,19 +326,6 @@ export default function HomeScreen() {
   // Add a modal or prompt for API key
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Colors[colorScheme].background }}>
-      <View style={{ paddingTop: 16, paddingBottom: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-        <TouchableOpacity style={{ position: 'absolute', left: 16, top: 16, zIndex: 2 }} onPress={() => { setPendingRemember(rememberChat); setShowRememberModal(true); }}>
-          <Ionicons name="analytics-outline" size={26} color={Colors[colorScheme].primary} />
-        </TouchableOpacity>
-        <ThemedText type="title" style={{ fontWeight: 'bold', color: Colors[colorScheme].primary, fontSize: 28, marginHorizontal: 56, textAlign: 'center', flex: 1 }}>{t('quranic_ai')}</ThemedText>
-        <View style={{ flexDirection: 'row', position: 'absolute', right: 16, top: 16, zIndex: 2 }}>
-          <TouchableOpacity style={{ marginRight: 16 }} onPress={() => setMessages([
-            { ...INITIAL_MESSAGES[0], text: t('assistant_welcome') }
-          ])}>
-            <Ionicons name="trash-outline" size={26} color={Colors[colorScheme].primary} />
-          </TouchableOpacity>
-        </View>
-      </View>
       {/* Remember Chat Modal */}
       {showRememberModal && (
         <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.4)', zIndex: 100, justifyContent: 'center', alignItems: 'center' }}>

@@ -78,9 +78,6 @@ export default function PrayerTab() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Colors[colorScheme].background }}>
-      <View style={{ paddingTop: 16, paddingBottom: 8, alignItems: 'center' }}>
-        <ThemedText type="title" style={{ fontWeight: 'bold', color: Colors[colorScheme].primary, fontSize: 28 }}>{t('prayer_times')}</ThemedText>
-      </View>
       <ScrollView contentContainerStyle={{ flexGrow: 1, backgroundColor: Colors[colorScheme].background }}>
         {loading && (
           <View style={{ paddingVertical: 8 }}>

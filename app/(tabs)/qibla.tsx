@@ -174,12 +174,6 @@ export default function QiblaTab() {
         </View>
       ) : (
         <>
-          <View style={{ paddingTop: 16, paddingBottom: 8, alignItems: 'center' }}>
-            <ThemedText type="title" style={{ fontWeight: 'bold', color: Colors[colorScheme].primary, fontSize: 28 }}>
-              {t('qibla_direction')}
-            </ThemedText>
-          </View>
-          
           <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 16, paddingTop: 0, backgroundColor: Colors[colorScheme].background }}>
             {/* Compass & Info */}
             <View style={styles.compassContainer}>

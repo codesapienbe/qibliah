@@ -169,9 +169,6 @@ export default function CalendarTab() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Colors[colorScheme].background }}>
-      <View style={{ paddingTop: 16, paddingBottom: 8, alignItems: 'center' }}>
-        <ThemedText type="title" style={{ fontWeight: 'bold', color: Colors[colorScheme].primary, fontSize: 28 }}>{t('calendar')}</ThemedText>
-      </View>
       {/* Month Info (no background) */}
       <View style={{ alignItems: 'center', marginBottom: 8 }}>
         <ThemedText style={{ fontSize: 22, fontWeight: 'bold', color: Colors[colorScheme].primary }}>{getIslamicMonthName(month, t)} {year}</ThemedText>

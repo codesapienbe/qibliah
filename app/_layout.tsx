@@ -11,22 +11,22 @@ import i18n from '../utils/i18n';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import Preloader from '@/components/Preloader';
 import TimezoneSelection from '@/components/TimezoneSelection';
-import { Colors } from '@/constants/Colors';
+
 import { SupportedTimezone } from '@/constants/Timezones';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { initNotifications } from '@/services/notifications';
 import { logError } from '@/utils/logger';
-import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+
+
 import React from 'react';
-import { Image } from 'react-native';
+
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
-  const router = useRouter();
+
 
   // App initialization states
   const [langReady, setLangReady] = React.useState(false);
@@ -137,29 +137,8 @@ export default function RootLayout() {
       <ErrorBoundary>
         <I18nextProvider i18n={i18n}>
           <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-            <Stack>
-              <Stack.Screen
-                name="(tabs)"
-                options={{
-                  headerTitle: () => (
-                    <Image
-                      source={require('../assets/images/icon.png')}
-                      style={{ width: 36, height: 36, borderRadius: 8 }}
-                      resizeMode="contain"
-                    />
-                  ),
-                  headerRight: () => (
-                    <Ionicons
-                      name="settings-outline"
-                      size={26}
-                      style={{ marginRight: 18 }}
-                      color={Colors[colorScheme ?? 'light'].icon}
-                      onPress={() => router.push('/settings')}
-                    />
-                  ),
-                  headerShown: true,
-                }}
-              />
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="(tabs)" />
               <Stack.Screen name="+not-found" />
             </Stack>
             <StatusBar style="auto" />
