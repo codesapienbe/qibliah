@@ -1,422 +1,411 @@
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
-import * as Location from 'expo-location';
-import React, { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Alert, FlatList, Linking, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import React from 'react';
+import { StyleSheet } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
-// Try to use Slider if available
-let Slider: any = null;
-try {
-  Slider = require('@react-native-community/slider').default;
-} catch {}
 
 const MASJIDS = [
   {
-    id: 1,
-    name: 'Moskee Al-Haram',
-    address: 'Hoofdstraat 45, 9240 Zele',
-    coordinates: [51.0680, 4.0420],
+    "id": 1,
+    "name": "Mehmet Akif",
+    "address": "Dendermondestraat 34, 2018 Antwerpen",
+    "coordinates": null
   },
   {
-    id: 2,
-    name: 'Islamic Center Dendermonde',
-    address: 'Kerkstraat 12, 9200 Dendermonde',
-    coordinates: [51.0280, 4.1010],
+    "id": 2,
+    "name": "Ensar",
+    "address": "Ginderbuiten 49, 2400 Mol",
+    "coordinates": null
   },
   {
-    id: 3,
-    name: 'Masjid An-Noor Lokeren',
-    address: 'Molenstraat 67, 9160 Lokeren',
-    coordinates: [51.1040, 3.9940],
+    "id": 3,
+    "name": "Attaqwa",
+    "address": "Van Duytstraat 35, 2100 Deurne (Antwerpen)",
+    "coordinates": null
   },
   {
-    id: 4,
-    name: 'Grote Moskee Gent',
-    address: 'Hobbemastraat 1, 9000 Gent',
-    coordinates: [51.0500, 3.7303],
+    "id": 4,
+    "name": "Innerlijke Vrede (Huzur)",
+    "address": "Ieperstraat 26, 2018 Antwerpen",
+    "coordinates": null
   },
-];
+  {
+    "id": 5,
+    "name": "El Mouslimine",
+    "address": "Jan Palfijnstraat 35, 2060 Antwerpen",
+    "coordinates": null
+  },
+  {
+    "id": 6,
+    "name": "Selimiye",
+    "address": "Valentinusstraat 61, 3550 Heusden-Zolder",
+    "coordinates": null
+  },
+  {
+    "id": 7,
+    "name": "Badr",
+    "address": "Mouterijstraat 1, 3500 Hasselt",
+    "coordinates": null
+  },
+  {
+    "id": 8,
+    "name": "Hassan Ebno Tabit",
+    "address": "Noordlaan 133, 3600 Genk",
+    "coordinates": null
+  },
+  {
+    "id": 9,
+    "name": "Yunus Emre",
+    "address": "Wintergroenstraat 61, 3600 Genk",
+    "coordinates": null
+  },
+  {
+    "id": 10,
+    "name": "Sultan Ahmet",
+    "address": "Pastoor Paquaylaan 77, 3550 Heusden-Zolder",
+    "coordinates": null
+  },
+  {
+    "id": 11,
+    "name": "Yesil",
+    "address": "Saviostraat 49, 3530 Houthalen-Helchteren",
+    "coordinates": null
+  },
+  {
+    "id": 12,
+    "name": "Al Mouhsinine",
+    "address": "Hasseltsepoort 17, 3740 Bilzen",
+    "coordinates": null
+  },
+  {
+    "id": 13,
+    "name": "Mevlana",
+    "address": "Wildekerslaan 46, 3600 Genk",
+    "coordinates": null
+  },
+  {
+    "id": 14,
+    "name": "Yildirim Beyazit",
+    "address": "Hooiweg 75, 3600 Genk",
+    "coordinates": null
+  },
+  {
+    "id": 15,
+    "name": "Selimiye",
+    "address": "Vreyshorring 125, 3920 Lommel",
+    "coordinates": null
+  },
+  {
+    "id": 16,
+    "name": "Fatih",
+    "address": "Staatstuinwijk 20/a, 3600 Genk",
+    "coordinates": null
+  },
+  {
+    "id": 17,
+    "name": "Barmhartig (Arrahma)",
+    "address": "Haardstraat 80, 3800 Sint-Truiden",
+    "coordinates": null
+  },
+  {
+    "id": 18,
+    "name": "Tauhid",
+    "address": "Kolonies 8, 3900 Pelt",
+    "coordinates": null
+  },
+  {
+    "id": 19,
+    "name": "Yavuz Sultan Selim",
+    "address": "Langestraat 204, 9050 Ledeberg (Gent)",
+    "coordinates": null
+  },
+  {
+    "id": 20,
+    "name": "Hicret",
+    "address": "Hazewindstraat 47, 9100 Sint-Niklaas",
+    "coordinates": null
+  },
+  {
+    "id": 21,
+    "name": "Tevhid",
+    "address": "Francisco Ferrerlaan 214/a, 9000 Gent",
+    "coordinates": null
+  },
+  {
+    "id": 22,
+    "name": "Ensarija",
+    "address": "Loodsenstraat 56 bus 001, 9000 Gent",
+    "coordinates": null
+  },
+  {
+    "id": 23,
+    "name": "Kevser",
+    "address": "Binnenstraat 7, 9300 Aalst",
+    "coordinates": null
+  },
+  {
+    "id": 24,
+    "name": "Beraat",
+    "address": "Vervoortplaats 17, 3290 Diest",
+    "coordinates": null
+  },
+  {
+    "id": 25,
+    "name": "Al Ihsaan",
+    "address": "Kolonel Begaultlaan 45, 3012 Wilsele (Leuven)",
+    "coordinates": null
+  },
+  {
+    "id": 26,
+    "name": "Assounah",
+    "address": "Nieuwstraat 155, 8792 Desselgem (Waregem)",
+    "coordinates": null
+  },
+  {
+    "id": 27,
+    "name": "Moskee Al Fath (Gent)",
+    "address": "Bevelandsekaai (Brugse Poort), 9000 Gent",
+    "coordinates": [51.06138, 3.70239]
+  },
+  {
+    "id": 28,
+    "name": "Yavuz Sultan Selim (Ledeberg) – map ref",
+    "address": "Langestraat 204, 9050 Ledeberg (Gent)",
+    "coordinates": null
+  },
+  {
+    "id": 29,
+    "name": "Masjid in Brugge (Arabic listing)",
+    "address": "Dijver area, 8000 Brugge",
+    "coordinates": [51.19503, 3.19488]
+  },
+  {
+    "id": 30,
+    "name": "Moskee Wetteren – map ref",
+    "address": "Wetteren (exact street to confirm), 9230 Wetteren",
+    "coordinates": [51.00813, 3.87962]
+  },
+  {
+    "id": 31,
+    "name": "Muattar",
+    "address": "Gent (address to confirm)",
+    "coordinates": null
+  },
+  {
+    "id": 32,
+    "name": "Arruhama",
+    "address": "Waasmunster (address to confirm)",
+    "coordinates": null
+  },
+  {
+    "id": 33,
+    "name": "Al Muwahideen",
+    "address": "Antwerpen (address to confirm)",
+    "coordinates": null
+  },
+  {
+    "id": 34,
+    "name": "Attawhid",
+    "address": "Antwerpen (address to confirm)",
+    "coordinates": null
+  },
+  {
+    "id": 35,
+    "name": "Ennassr",
+    "address": "Antwerpen (address to confirm)",
+    "coordinates": null
+  },
+  {
+    "id": 36,
+    "name": "Al Buraq",
+    "address": "Mechelen (address to confirm)",
+    "coordinates": null
+  },
+  {
+    "id": 37,
+    "name": "Al Inaba",
+    "address": "Deurne (Antwerpen) (address to confirm)",
+    "coordinates": null
+  },
+  {
+    "id": 38,
+    "name": "Arrahmaan",
+    "address": "Turnhout (address to confirm)",
+    "coordinates": null
+  },
+  {
+    "id": 39,
+    "name": "Al Houda",
+    "address": "Genk (address to confirm)",
+    "coordinates": null
+  },
+  {
+    "id": 40,
+    "name": "El Mouslimine",
+    "address": "Houthalen-Helchteren (address to confirm)",
+    "coordinates": null
+  },
+  {
+    "id": 41,
+    "name": "Al Farah Attouba",
+    "address": "Genk (address to confirm)",
+    "coordinates": null
+  },
+  {
+    "id": 42,
+    "name": "Tawheed",
+    "address": "Beringen (address to confirm)",
+    "coordinates": null
+  },
+  {
+    "id": 43,
+    "name": "Nour Al Houda",
+    "address": "Landen (address to confirm)",
+    "coordinates": null
+  },
+  {
+    "id": 44,
+    "name": "Asalam",
+    "address": "Tienen (address to confirm)",
+    "coordinates": null
+  },
+  {
+    "id": 45,
+    "name": "Al Ansar",
+    "address": "Sint-Pieters-Leeuw (address to confirm)",
+    "coordinates": null
+  },
+  {
+    "id": 46,
+    "name": "Arrahman",
+    "address": "Halle (address to confirm)",
+    "coordinates": null
+  },
+  {
+    "id": 47,
+    "name": "Attakwa",
+    "address": "Kortrijk (address to confirm)",
+    "coordinates": null
+  },
+  {
+    "id": 48,
+    "name": "Al Karam",
+    "address": "Chaussée de Neerstalle 52, 1190 Forest (Brussels)",
+    "coordinates": null
+  },
+  {
+    "id": 49,
+    "name": "Al Moustakbal",
+    "address": "Rue de l’Avenir 18, 1080 Molenbeek-Saint-Jean (Brussels)",
+    "coordinates": null
+  },
+  {
+    "id": 50,
+    "name": "Al Moutaquine",
+    "address": "Chaussée de Merchtem 53a, 1080 Molenbeek-Saint-Jean (Brussels)",
+    "coordinates": null
+  },
+  {
+    "id": 51,
+    "name": "ASCTTB",
+    "address": "Rue Auguste Gevart 39-41, 1070 Anderlecht (Brussels)",
+    "coordinates": null
+  },
+  {
+    "id": 52,
+    "name": "Attadamoun (Solidarité culturelle)",
+    "address": "Rue des Étangs Noirs 36, 1080 Molenbeek-Saint-Jean (Brussels)",
+    "coordinates": null
+  },
+  {
+    "id": 53,
+    "name": "Badr (Brussels)",
+    "address": "Rue de Ribaucourt 108, 1080 Molenbeek-Saint-Jean (Brussels)",
+    "coordinates": null
+  },
+  {
+    "id": 54,
+    "name": "Bangladesh Islamic Cultural Centre",
+    "address": "Chaussée de Wavre 269, 1050 Ixelles (Brussels)",
+    "coordinates": null
+  },
+  {
+    "id": 55,
+    "name": "Essalam (Brussels)",
+    "address": "Avenue Fonsny 81, 1060 Saint-Gilles (Brussels)",
+    "coordinates": null
+  },
+  {
+    "id": 56,
+    "name": "Fatih Camii (Brussels)",
+    "address": "Chaussée de Haecht 88-89, 1030 Schaerbeek (Brussels)",
+    "coordinates": null
+  }
+]
 
-function haversineDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
-  // Returns distance in km
-  const R = 6371;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLng = (lng2 - lng1) * Math.PI / 180;
-  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-    Math.sin(dLng/2) * Math.sin(dLng/2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  return R * c;
-}
-
-function openDirections(lat: number, lng: number) {
-  const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
-  Linking.openURL(url).catch(() => Alert.alert('Error', 'Could not open Google Maps.'));
-}
-
-function openCall() {
-  Linking.openURL('tel:+32123456789').catch(() => Alert.alert('Error', 'Could not open dialer.'));
-}
 
 export default function MasjidsTab() {
   const colorScheme = useColorScheme() ?? 'light';
-  const { t } = useTranslation();
-  const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [manualLocation, setManualLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [permissionDenied, setPermissionDenied] = useState(false);
-  const [maxDistance, setMaxDistance] = useState(10); // km
-  const [manualCountry, setManualCountry] = useState('');
-  const [manualCity, setManualCity] = useState('');
-  const [manualPostcode, setManualPostcode] = useState('');
-  const [manualError, setManualError] = useState('');
-  const [geocoding, setGeocoding] = useState(false);
 
-  useEffect(() => {
-    (async () => {
-      setLoading(true);
-      setErrorMsg(null);
-      try {
-        let { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== 'granted') {
-          setErrorMsg(t('masjids_location_permission_denied'));
-          setPermissionDenied(true);
-          setLoading(false);
-          return;
-        }
-        let loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-        setLocation({ lat: loc.coords.latitude, lng: loc.coords.longitude });
-        setPermissionDenied(false);
-      } catch (e) {
-        setErrorMsg(t('masjids_location_error'));
-        setPermissionDenied(true);
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
+  const markers = (MASJIDS.filter((m: any) => Array.isArray(m.coordinates) && m.coordinates.length === 2) as Array<{
+    id: number;
+    name: string;
+    address: string;
+    coordinates: [number, number];
+  }>);
 
-  // Use manual location if permission denied and manual location is set
-  const effectiveLocation = permissionDenied && manualLocation ? manualLocation : location;
-
-  // Manual location submit handler (geocode address)
-  const handleManualLocationSubmit = async () => {
-    if (!manualCountry || !manualCity) {
-      setManualError(t('masjids_enter_country_city'));
-      return;
+  const computeInitialRegion = () => {
+    if (markers.length === 0) {
+      return {
+        latitude: 0,
+        longitude: 0,
+        latitudeDelta: 60,
+        longitudeDelta: 60,
+      };
     }
-    setManualError('');
-    setGeocoding(true);
-    try {
-      const address = `${manualPostcode ? manualPostcode + ', ' : ''}${manualCity}, ${manualCountry}`;
-      const results = await Location.geocodeAsync(address);
-      if (!results || results.length === 0) {
-        setManualError(t('masjids_location_not_found'));
-        setGeocoding(false);
-        return;
-      }
-      setManualLocation({ lat: results[0].latitude, lng: results[0].longitude });
-    } catch (e) {
-      setManualError(t('masjids_geocoding_failed'));
-    } finally {
-      setGeocoding(false);
+    let minLat = markers[0].coordinates[0];
+    let maxLat = markers[0].coordinates[0];
+    let minLng = markers[0].coordinates[1];
+    let maxLng = markers[0].coordinates[1];
+    for (const m of markers) {
+      const [lat, lng] = m.coordinates;
+      minLat = Math.min(minLat, lat);
+      maxLat = Math.max(maxLat, lat);
+      minLng = Math.min(minLng, lng);
+      maxLng = Math.max(maxLng, lng);
     }
+    const latitude = (minLat + maxLat) / 2;
+    const longitude = (minLng + maxLng) / 2;
+    const latitudeDelta = Math.max(0.1, (maxLat - minLat) * 1.4 || 0.5);
+    const longitudeDelta = Math.max(0.1, (maxLng - minLng) * 1.4 || 0.5);
+    return { latitude, longitude, latitudeDelta, longitudeDelta };
   };
 
-  // Calculate distances
-  const masjidsWithDistance = MASJIDS.map((m) => {
-    let distance = null;
-    if (effectiveLocation) {
-      distance = haversineDistance(effectiveLocation.lat, effectiveLocation.lng, m.coordinates[0], m.coordinates[1]);
-    }
-    return { ...m, distance };
-  }).sort((a, b) => {
-    if (a.distance == null) return 1;
-    if (b.distance == null) return -1;
-    return a.distance - b.distance;
-  });
-
-  // Filter by maxDistance
-  const filteredMasjids = masjidsWithDistance.filter(
-    m => m.distance != null && m.distance <= maxDistance
-  );
-
-  // Manual input form if permission denied and no manual location set
-  if (permissionDenied && !manualLocation) {
-    return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: Colors[colorScheme].background, justifyContent: 'center', alignItems: 'center' }}>
-        <ThemedText type="title" style={{ fontWeight: 'bold', color: Colors[colorScheme].primary, fontSize: 28, marginBottom: 16 }}>
-          {t('masjids_enter_location')}
-        </ThemedText>
-        <TextInput
-          style={{ borderWidth: 1, borderColor: Colors[colorScheme].cardBorder, borderRadius: 8, padding: 10, width: 220, marginBottom: 12, color: Colors[colorScheme].text }}
-          placeholder={t('masjids_country_placeholder')}
-          placeholderTextColor={Colors[colorScheme].text}
-          value={manualCountry}
-          onChangeText={setManualCountry}
-        />
-        <TextInput
-          style={{ borderWidth: 1, borderColor: Colors[colorScheme].cardBorder, borderRadius: 8, padding: 10, width: 220, marginBottom: 12, color: Colors[colorScheme].text }}
-          placeholder={t('masjids_city_placeholder')}
-          placeholderTextColor={Colors[colorScheme].text}
-          value={manualCity}
-          onChangeText={setManualCity}
-        />
-        <TextInput
-          style={{ borderWidth: 1, borderColor: Colors[colorScheme].cardBorder, borderRadius: 8, padding: 10, width: 220, marginBottom: 12, color: Colors[colorScheme].text }}
-          placeholder={t('masjids_postcode_placeholder')}
-          placeholderTextColor={Colors[colorScheme].text}
-          value={manualPostcode}
-          onChangeText={setManualPostcode}
-          keyboardType="numeric"
-        />
-        {manualError ? <Text style={{ color: Colors[colorScheme].error, marginBottom: 8 }}>{manualError}</Text> : null}
-        <TouchableOpacity onPress={handleManualLocationSubmit} style={{ backgroundColor: Colors[colorScheme].primary, borderRadius: 8, paddingHorizontal: 20, paddingVertical: 10, marginTop: 8 }} disabled={geocoding}>
-          <Text style={{ color: Colors[colorScheme].icon, fontWeight: 'bold' }}>{geocoding ? t('masjids_looking_up') : t('masjids_submit')}</Text>
-        </TouchableOpacity>
-        <Text style={{ color: Colors[colorScheme].text, marginTop: 20, textAlign: 'center', fontSize: 13 }}>
-          {t('masjids_location_permission_info')}
-        </Text>
-      </SafeAreaView>
-    );
-  }
+  const initialRegion = computeInitialRegion();
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Colors[colorScheme].background }}>
-      <View style={{ paddingTop: 16, paddingBottom: 8, alignItems: 'center' }}>
-        <ThemedText type="title" style={{ fontWeight: 'bold', color: Colors[colorScheme].primary, fontSize: 28 }}>{t('masjids_nearby')}</ThemedText>
-      </View>
-      <FlatList
-        data={loading || errorMsg ? [] : filteredMasjids}
-        keyExtractor={(item) => item.id.toString()}
-        contentContainerStyle={styles.list}
-        ListHeaderComponent={
-          <>
-            {/* Distance Filter */}
-            {effectiveLocation && (
-              <View style={styles.filterRow}>
-                <ThemedText style={{ marginRight: 8 }}>{t('masjids_within')}</ThemedText>
-                {Slider ? (
-                  <Slider
-                    style={{ flex: 1, marginHorizontal: 8 }}
-                    minimumValue={1}
-                    maximumValue={50}
-                    step={1}
-                    value={maxDistance}
-                    onValueChange={setMaxDistance}
-                    minimumTrackTintColor={Colors[colorScheme].primary}
-                    maximumTrackTintColor={Colors[colorScheme].cardBorder}
-                    thumbTintColor={Colors[colorScheme].primary}
-                  />
-                ) : (
-                  <View style={{ flexDirection: 'row', gap: 8 }}>
-                    {[1, 2, 5, 10, 20, 30, 50].map((d) => (
-                      <TouchableOpacity
-                        key={d}
-                        style={[
-                          styles.filterBtn,
-                          { backgroundColor: maxDistance === d ? Colors[colorScheme].primary : Colors[colorScheme].surface },
-                        ]}
-                        onPress={() => setMaxDistance(d)}
-                      >
-                        <Text style={{ color: maxDistance === d ? Colors[colorScheme].icon : Colors[colorScheme].text }}>{d} km</Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                )}
-                <ThemedText style={{ marginLeft: 8 }}>{maxDistance} km</ThemedText>
-              </View>
-            )}
-            {/* Map View */}
-            {effectiveLocation && (
-              <MapView
-                style={styles.map}
-                initialRegion={{
-                  latitude: effectiveLocation.lat,
-                  longitude: effectiveLocation.lng,
-                  latitudeDelta: 0.08,
-                  longitudeDelta: 0.08,
-                }}
-                showsUserLocation={true}
-                showsMyLocationButton={Platform.OS === 'android'}
-              >
-                <Marker
-                  coordinate={{ latitude: effectiveLocation.lat, longitude: effectiveLocation.lng }}
-                  title="You"
-                  pinColor={Colors[colorScheme].primary}
-                />
-                {filteredMasjids.map((m) => (
-                  <Marker
-                    key={m.id}
-                    coordinate={{ latitude: m.coordinates[0], longitude: m.coordinates[1] }}
-                    title={m.name}
-                    description={m.address}
-                    pinColor={Colors[colorScheme].secondary}
-                  />
-                ))}
-              </MapView>
-            )}
-            {/* No masjids found label */}
-            {effectiveLocation && !loading && !errorMsg && filteredMasjids.length === 0 && (
-              <View style={{ alignItems: 'center', marginVertical: 16 }}>
-                <ThemedText style={{ color: Colors[colorScheme].warning, fontWeight: 'bold' }}>
-                  {t('masjids_no_found', { maxDistance })}
-                </ThemedText>
-              </View>
-            )}
-            {/* Loading/Error States */}
-            {loading ? (
-              <View style={{ alignItems: 'center', padding: 16 }}>
-                <ActivityIndicator size="small" color={Colors[colorScheme].primary} />
-                <ThemedText style={{ marginTop: 8 }}>{t('masjids_getting_location')}</ThemedText>
-              </View>
-            ) : errorMsg ? (
-              <View style={{ alignItems: 'center', padding: 16 }}>
-                <ThemedText style={{ color: Colors[colorScheme].error }}>{errorMsg}</ThemedText>
-              </View>
-            ) : null}
-          </>
-        }
-        renderItem={({ item }) => (
-          <ThemedView style={[
-            styles.masjidCard,
-            { backgroundColor: Colors[colorScheme].surface, borderColor: Colors[colorScheme].cardBorder },
-          ]}>
-            <View style={styles.masjidHeader}>
-              <View style={styles.masjidInfo}>
-                <ThemedText style={[styles.masjidName, { color: Colors[colorScheme].text }]}>{item.name}</ThemedText>
-                <ThemedText style={[styles.masjidAddress, { color: Colors[colorScheme].secondary }]}>{item.address}</ThemedText>
-              </View>
-              <ThemedText style={[styles.masjidDistance, { color: Colors[colorScheme].secondary }] }>
-                {item.distance != null ? `${item.distance.toFixed(1)} km` : '--'}
-              </ThemedText>
-            </View>
-            <View style={styles.masjidActions}>
-              <TouchableOpacity
-                style={[styles.actionBtn, { backgroundColor: Colors[colorScheme].primary }]}
-                onPress={() => openDirections(item.coordinates[0], item.coordinates[1])}
-                activeOpacity={0.8}
-              >
-                <ThemedText style={[styles.actionBtnText, { color: Colors[colorScheme].icon }]}>{t('masjids_directions')}</ThemedText>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.actionBtn,
-                  styles.secondaryBtn,
-                  { backgroundColor: 'transparent', borderColor: Colors[colorScheme].primary },
-                ]}
-                onPress={openCall}
-                activeOpacity={0.8}
-              >
-                <ThemedText style={[styles.actionBtnText, { color: Colors[colorScheme].primary }]}>{t('masjids_call')}</ThemedText>
-              </TouchableOpacity>
-            </View>
-          </ThemedView>
-        )}
-        ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
-        ListEmptyComponent={null}
-      />
+      <MapView
+        style={{ flex: 1 }}
+        initialRegion={initialRegion}
+      >
+        {markers.map((m) => (
+          <Marker
+            key={m.id}
+            coordinate={{ latitude: m.coordinates[0], longitude: m.coordinates[1] }}
+            title={m.name}
+            description={m.address}
+            pinColor={Colors[colorScheme].secondary}
+          />
+        ))}
+      </MapView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-    paddingTop: 24,
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  title: {
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 16,
-    marginBottom: 0,
-  },
-  filterRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-    gap: 8,
-  },
-  filterBtn: {
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    marginHorizontal: 2,
-  },
-  filterBtnActive: {},
   map: {
-    width: '100%',
-    height: 260,
-    borderRadius: 16,
-    marginBottom: 16,
-    overflow: 'hidden',
-  },
-  list: {
-    paddingBottom: 24,
-  },
-  masjidCard: {
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  masjidHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 12,
-  },
-  masjidInfo: {
     flex: 1,
   },
-  masjidName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  masjidAddress: {
-    fontSize: 14,
-    marginBottom: 8,
-  },
-  masjidDistance: {
-    fontWeight: 'bold',
-    fontSize: 16,
-    marginLeft: 8,
-  },
-  masjidActions: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 12,
-  },
-  actionBtn: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    fontSize: 12,
-    fontWeight: '600',
-    marginRight: 8,
-  },
-  actionBtnText: {
-    fontWeight: 'bold',
-    fontSize: 14,
-  },
-  secondaryBtn: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-  },
-  secondaryBtnText: {},
 }); 

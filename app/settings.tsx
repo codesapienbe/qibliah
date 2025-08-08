@@ -194,7 +194,7 @@ const styles = StyleSheet.create({
   },
   pickerRow: {
     flexDirection: 'row',
-    gap: 8,
+    flexWrap: 'wrap',
   },
   pickerBtn: {
     borderWidth: 1,
@@ -202,17 +202,19 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 16,
     marginRight: 8,
+    marginBottom: 8,
   },
   pickerBtnActive: {
   },
   apiKeyBtn: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     borderWidth: 1,
     borderRadius: 8,
     paddingVertical: 8,
     paddingHorizontal: 16,
-    marginLeft: 8,
+    width: '100%',
   },
   modalOverlay: {
     flex: 1,
