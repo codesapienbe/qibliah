@@ -113,6 +113,7 @@ export default function CalendarTab() {
   const [currentDate, setCurrentDate] = useState(today);
   const [selectedDate, setSelectedDate] = useState(today);
   const [ayah, setAyah] = useState<{ text: string; surah: string; numberInSurah: number } | null>(null);
+  const [ayahExpanded, setAyahExpanded] = useState(false);
 
   // Calendar navigation
   const year = currentDate.getFullYear();
@@ -152,6 +153,7 @@ export default function CalendarTab() {
   // Fetch a deterministic "random" ayah for the selected date
   useEffect(() => {
     let cancelled = false;
+    setAyahExpanded(false);
     (async () => {
       const idx = dateToAyahIndex(selectedDate);
       try {
@@ -181,7 +183,7 @@ export default function CalendarTab() {
           <ThemedText style={{ color: Colors[colorScheme].primary, fontWeight: '600', fontSize: 16 }}>{t('today')}</ThemedText>
         </TouchableOpacity>
       </View>
-      <ScrollView contentContainerStyle={{ flexGrow: 1, backgroundColor: Colors[colorScheme].background }}>
+      <ScrollView contentContainerStyle={{ flexGrow: 1, backgroundColor: Colors[colorScheme].background, paddingBottom: insets.bottom + 48 }}>
         <View style={{ flex: 1, paddingHorizontal: 0, paddingTop: 0 }}>
           {/* Weekday Headers */}
           <View style={{ flexDirection: 'row', backgroundColor: Colors[colorScheme].surface, paddingVertical: 10, borderRadius: 12, marginHorizontal: 16, marginBottom: 2 }}>
@@ -238,9 +240,19 @@ export default function CalendarTab() {
           {/* Word of the Day tied to selected date */}
           <View style={{ marginHorizontal: 16, marginTop: 12, padding: 14, backgroundColor: Colors[colorScheme].surface, borderRadius: 14, alignItems: 'center' }}>
             <ThemedText style={{ color: Colors[colorScheme].primary, fontWeight: 'bold', fontSize: 16, marginBottom: 4 }}>{t('word_of_the_day')}</ThemedText>
-            <ThemedText style={{ color: Colors[colorScheme].text, fontSize: 15, textAlign: 'center' }} numberOfLines={4}>
+            <ThemedText
+              style={{ color: Colors[colorScheme].text, fontSize: 15, textAlign: 'center', alignSelf: 'stretch' }}
+              numberOfLines={ayahExpanded ? undefined : 4}
+            >
               {ayah ? `${ayah.text}\n— ${ayah.surah} ${ayah.numberInSurah}` : t('word_of_the_day_quote')}
             </ThemedText>
+            {ayah && ayah.text && ayah.text.length > 160 && (
+              <TouchableOpacity onPress={() => setAyahExpanded((v) => !v)} style={{ marginTop: 8 }}>
+                <ThemedText style={{ color: Colors[colorScheme].primary, fontWeight: '600' }}>
+                  {ayahExpanded ? t('show_less') : t('read_more')}
+                </ThemedText>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
       </ScrollView>
