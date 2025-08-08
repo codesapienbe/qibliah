@@ -3,15 +3,14 @@ import { Colors } from '@/constants/Colors';
 import { PrayerKey } from '@/constants/Prayer';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { usePrayerTimes } from '@/hooks/usePrayerTimes';
+import { playAdhan } from '@/services/audio';
 import { Ionicons } from '@expo/vector-icons';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Dimensions, SafeAreaView, ScrollView, Switch, TouchableOpacity, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function CalendarTab() {
   const colorScheme = useColorScheme() ?? 'light';
-  useSafeAreaInsets();
   const { t } = useTranslation();
   const today = new Date();
   const [currentDate, setCurrentDate] = useState(today);
@@ -28,8 +27,6 @@ export default function CalendarTab() {
     toggleReminder,
     isToday,
   } = usePrayerTimes(selectedDate);
-
-  const [showSelection, setShowSelection] = useState<boolean>(false);
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
 
@@ -58,8 +55,6 @@ export default function CalendarTab() {
   const SECTION_MARGIN_TOP = Math.round(8 * SCALE);
   const CARD_PADDING = Math.round(14 * SCALE);
   const CARD_RADIUS = Math.round(14 * SCALE);
-  const REMINDERS_MARGIN_TOP = Math.round(16 * SCALE);
-  const STATS_MARGIN_TOP = Math.round(16 * SCALE);
   // Increase aspectRatio slightly (< height) to shrink calendar vertical footprint when scaling
   const CELL_ASPECT = SCALE < 1 ? 1 + (1 - SCALE) * 0.8 : 1;
   const PILL_WIDTH = Math.round(92 * SCALE);
@@ -72,26 +67,12 @@ export default function CalendarTab() {
   ];
   const WEEKDAYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
   
-  function getDaysInMonth(year: number, month: number): number {
-    return new Date(year, month + 1, 0).getDate();
-  }
-  function getFirstDayOfMonth(year: number, month: number): number {
-    return new Date(year, month, 1).getDay();
-  }
   function getWeekStart(d: Date) {
     const base = new Date(d);
     const start = new Date(base);
     start.setHours(0, 0, 0, 0);
     start.setDate(base.getDate() - base.getDay());
     return start;
-  }
-  function getCalendarGrid(year: number, month: number): (number | null)[] {
-    const firstDay = getFirstDayOfMonth(year, month);
-    const daysInMonth = getDaysInMonth(year, month);
-    const days: (number | null)[] = [];
-    for (let i = 0; i < firstDay; i++) days.push(null);
-    for (let day = 1; day <= daysInMonth; day++) days.push(day);
-    return days;
   }
   const weekDates = useMemo(() => {
     const base = new Date(selectedDate);
@@ -107,16 +88,11 @@ export default function CalendarTab() {
   const nextWeek = () => setSelectedDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate() + 7));
   // Navigation helpers (not rendered yet)
   const goToToday = () => { setCurrentDate(today); setSelectedDate(today); };
-  const handleDayClick = (day: number | null) => { if (day) setSelectedDate(new Date(year, month, day)); };
   const handleWeekDateClick = (date: Date) => { setSelectedDate(date); setCurrentDate(new Date(date.getFullYear(), date.getMonth(), 1)); };
-  const isTodayCell = (day: number | null) => day === today.getDate() && month === today.getMonth() && year === today.getFullYear();
-  const isSelectedCell = (day: number | null) => selectedDate && day === selectedDate.getDate() && month === selectedDate.getMonth() && year === selectedDate.getFullYear();
   
-  // Hide location/timezone selection for now
-  useEffect(() => { setShowSelection(false); }, []);
+  // Hide selection controls for now
+  // (selection UI removed)
 
-  const windowWidth = Dimensions.get('window').width;
-  const WEEK_ITEM_WIDTH = windowWidth - 16; // account for marginHorizontal ~8 on both sides
   const ISLAMIC_MONTHS = [
     'muharram', 'safar', 'rabi_al_awwal', 'rabi_al_thani', 'jumada_al_awwal', 'jumada_al_thani',
     'rajab', 'shaban', 'ramadan', 'shawwal', 'dhu_al_qidah', 'dhu_al_hijjah'
@@ -124,18 +100,20 @@ export default function CalendarTab() {
   function getIslamicMonthName(month: number) {
     return t(ISLAMIC_MONTHS[month % 12]);
   }
-  const WEEKS_AROUND = 52;
   const weekStartSelected = useMemo(() => getWeekStart(selectedDate), [selectedDate]);
-  const weeksData = useMemo(() => {
-    return Array.from({ length: WEEKS_AROUND * 2 + 1 }, (_, i) => {
-      const offsetWeeks = i - WEEKS_AROUND;
-      const d = new Date(weekStartSelected);
-      d.setDate(weekStartSelected.getDate() + offsetWeeks * 7);
-      return d;
-    });
-  }, [weekStartSelected]);
-  const [currentWeekIndex, setCurrentWeekIndex] = useState(WEEKS_AROUND);
-  const weekListRef = React.useRef(null);
+
+  const handlePlayAdhan = async () => {
+    try {
+      // Attempt to play bundled adhan audio if present
+      const ok = await playAdhan({ localModule: require('../../assets/sounds/adhan.wav'), volume: 1.0, shouldLoop: false });
+      if (!ok) {
+        // Fallback: try without explicit module (no-op if not configured)
+        await playAdhan();
+      }
+    } catch {
+      // ignore playback errors
+    }
+  };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Colors[colorScheme].background, paddingTop: 6 }}>
@@ -236,7 +214,12 @@ export default function CalendarTab() {
                 <View style={{ width: PILL_WIDTH, height: PILL_HEIGHT, borderRadius: PILL_RADIUS, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors[colorScheme].surface, opacity: row.notifiable ? 1 : 0.5 }}>
                   <Switch
                     value={row.notifiable ? !!reminderEnabled[row.key as PrayerKey] : false}
-                    onValueChange={row.notifiable ? (() => toggleReminder(row.key as PrayerKey)) : undefined}
+                    onValueChange={row.notifiable ? ((newValue: boolean) => {
+                      const key = row.key as PrayerKey;
+                      const current = !!reminderEnabled[key];
+                      if (newValue === current) return; // ignore no-op changes
+                      toggleReminder(key);
+                    }) : undefined}
                     disabled={!row.notifiable}
                   />
                 </View>
@@ -257,6 +240,14 @@ export default function CalendarTab() {
             <ThemedText style={{ fontSize: COUNTDOWN_SEP_FS, fontWeight: 'bold', color: Colors[colorScheme].secondary, marginHorizontal: 2 }}>:</ThemedText>
             <ThemedText style={{ fontSize: COUNTDOWN_DIGIT_FS, fontWeight: 'bold', color: Colors[colorScheme].text, fontFamily: 'monospace' }}>{String(countdown.seconds).padStart(2, '0')}</ThemedText>
           </View>
+          <TouchableOpacity
+            onPress={handlePlayAdhan}
+            style={{ marginTop: 10, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 12, backgroundColor: Colors[colorScheme].primary }}
+            activeOpacity={0.85}
+          >
+            <Ionicons name="volume-high" size={18} color={Colors[colorScheme].background} />
+            <ThemedText style={{ marginLeft: 8, color: Colors[colorScheme].background, fontWeight: 'bold' }}>{t('play_adhan', { defaultValue: 'Play Adhan' })}</ThemedText>
+          </TouchableOpacity>
         </View>
         )}
         {/* Removed Reminders and Stats sections for now */}

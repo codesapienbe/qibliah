@@ -6,10 +6,18 @@
   "build": {
     "development": {
       "distribution": "internal",
-      "developmentClient": true
+      "developmentClient": true,
+      "ios": {
+        "simulator": false,
+        "autoIncrement": "buildNumber"
+      }
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "ios": {
+        "simulator": false,
+        "autoIncrement": "buildNumber"
+      }
     }
   }
 }

@@ -11,7 +11,13 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.abuzittinkodyazar.qibliah",
+      "buildNumber": "1",
       "permissions": [
+        "LOCATION_WHEN_IN_USE",
+        "LOCATION_ALWAYS",
+        "NOTIFICATIONS",
+        "MOTION",
+        "CAMERA",
         "LOCATION_WHEN_IN_USE",
         "LOCATION_ALWAYS",
         "NOTIFICATIONS",
@@ -25,7 +31,15 @@
         "NSMotionUsageDescription": "Motion data is used to improve the Qibla compass accuracy.",
         "NSCameraUsageDescription": "The camera may be used for optional features that require image capture.",
         "NSSpeechRecognitionUsageDescription": "Voice input is used to allow you to speak your messages to the AI assistant instead of typing.",
-        "NSMicrophoneUsageDescription": "We use the microphone to capture your voice for the AI assistant."
+        "NSMicrophoneUsageDescription": "We use the microphone to capture your voice for the AI assistant.",
+        "NSLocalNetworkUsageDescription": "Allow local network discovery to connect to the development server on your computer during development.",
+        "NSBonjourServices": [
+          "_expo._tcp",
+          "_expou._tcp",
+          "_expo._tcp",
+          "_expou._tcp"
+        ],
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -76,9 +90,6 @@
       [
         "expo-notifications",
         {
-          "sounds": [
-            "./assets/sounds/adhan.wav"
-          ],
           "iosDisplayInForeground": true
         }
       ]
