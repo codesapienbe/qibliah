@@ -6,6 +6,7 @@
   "reminders": "Hatırlatıcılar",
   "stats": "İstatistikler",
   "fajr": "İmsak",
+  "sunrise": "Güneş",
   "dhuhr": "Öğle",
   "asr": "İkindi",
   "maghrib": "Akşam",
@@ -16,6 +17,8 @@
   "today": "Bugün",
   "word_of_the_day": "Günün Sözü",
   "word_of_the_day_quote": "Şüphesiz, zorlukla beraber kolaylık vardır. (Kur'an 94:6)",
+  "read_more": "Daha fazla oku",
+  "show_less": "Daha az göster",
   "january": "Ocak",
   "february": "Şubat",
   "march": "Mart",
@@ -111,5 +114,7 @@
   "home": "Ana Sayfa",
   "prayer": "Namaz",
   "qibla": "Kıble",
-  "assistant_goodbye": "Ma'a selâma! Allah'ın selamı üzerinize olsun. Başka bir sorunuz olursa buradayım! 👋"
+  "assistant_goodbye": "Ma'a selâma! Allah'ın selamı üzerinize olsun. Başka bir sorunuz olursa buradayım! 👋",
+  "toggle_reminders_info": "Yukarıdan her namaz için hatırlatıcıları etkinleştirin veya devre dışı bırakın.",
+  "test_adhan": "Ezanı Test Et"
 } 

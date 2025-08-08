@@ -17,7 +17,14 @@
         "NOTIFICATIONS",
         "MOTION",
         "CAMERA"
-      ]
+      ],
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "We use your location to calculate accurate prayer times and Qibla direction.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "We use your location to update prayer times and Qibla direction while you use the app.",
+        "NSLocationAlwaysUsageDescription": "We use your location to update prayer times and Qibla direction while you use the app.",
+        "NSMotionUsageDescription": "Motion data is used to improve the Qibla compass accuracy.",
+        "NSCameraUsageDescription": "The camera may be used for optional features that require image capture."
+      }
     },
     "android": {
       "permissions": [

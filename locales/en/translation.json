@@ -6,6 +6,7 @@
   "reminders": "Reminders",
   "stats": "Stats",
   "fajr": "Fajr",
+  "sunrise": "Sunrise",
   "dhuhr": "Dhuhr",
   "asr": "Asr",
   "maghrib": "Maghrib",
@@ -113,5 +114,9 @@
   "home": "Home",
   "prayer": "Prayer",
   "qibla": "Qibla",
-  "assistant_goodbye": "Ma'a salama! May peace be upon you. If you need anything else, just ask! 👋"
+  "assistant_goodbye": "Ma'a salama! May peace be upon you. If you need anything else, just ask! 👋",
+  "toggle_reminders_info": "Enable or disable reminders per prayer above.",
+  "test_adhan": "Test Adhan",
+  "select_timezone": "Select Timezone",
+  "select_location": "Select Location"
 } 

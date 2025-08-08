@@ -6,6 +6,7 @@
   "reminders": "Herinneringen",
   "stats": "Statistieken",
   "fajr": "Fadjr",
+  "sunrise": "Zonsopgang",
   "dhuhr": "Dhuhr",
   "asr": "Asr",
   "maghrib": "Maghrib",
@@ -111,5 +112,7 @@
   "home": "Home",
   "prayer": "Gebed",
   "qibla": "Qibla",
-  "assistant_goodbye": "Ma'a salama! Vrede zij met u. Als u nog iets nodig heeft, laat het gerust weten! 👋"
+  "assistant_goodbye": "Ma'a salama! Vrede zij met u. Als u nog iets nodig heeft, laat het gerust weten! 👋",
+  "toggle_reminders_info": "Schakel hierboven herinneringen per gebed in of uit.",
+  "test_adhan": "Adhan testen"
 } 
