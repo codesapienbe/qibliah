@@ -42,7 +42,7 @@ export default function QiblaTab() {
     stopCompass,
   } = useQiblaDirection();
   const windowHeight = Dimensions.get('window').height;
-  const mapHeight = Math.round(windowHeight * 0.33 * SCALE);
+  const mapHeight = Math.round(windowHeight * 0.33 * SCALE * 0.8);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -70,19 +70,7 @@ export default function QiblaTab() {
     }
   }, [requestLocationPermission, getCurrentLocation]);
 
-  // Debug logging
-  React.useEffect(() => {
-    if (heading !== null) {
-      console.log('Compass - Heading:', heading, '°');
-    }
-  }, [heading]);
-
-  React.useEffect(() => {
-    if (location) {
-      console.log('Current location:', location);
-      console.log('Expected Zele coords: ~51.0333°N, 4.0667°E');
-    }
-  }, [location]);
+  // Debug logging removed per request
 
   // Only calculate when we have real location data
   let qiblaDegrees: number | null = null;
@@ -101,24 +89,27 @@ export default function QiblaTab() {
   // Compass rotation: keep North pointing up
   const compassRotation = heading != null ? -heading : 0;
   
-  // Calculate Kaaba icon position on compass circle
+  // Calculate Kaaba icon position around the compass (just outside the circle)
   let kaabaX = COMPASS_SIZE / 2 - Math.round(16 * SCALE); // Default center position
   let kaabaY = COMPASS_SIZE / 2 - Math.round(16 * SCALE);
   let isNearQibla = false;
   
-  if (qiblaDegrees !== null && heading !== null) {
-    // Calculate the Kaaba position relative to the compass
+  if (qiblaDegrees !== null) {
+    // Place Kaaba marker relative to North only, independent of current heading
     const kaabaAngleFromNorth = qiblaDegrees;
     const kaabaRadians = (kaabaAngleFromNorth * Math.PI) / 180;
-    const compassRadius = (COMPASS_SIZE - 60) / 2; // Account for border and icon size
-    
-    // Position on compass circle
-    kaabaX = COMPASS_SIZE / 2 + compassRadius * Math.sin(kaabaRadians) - Math.round(16 * SCALE);
-    kaabaY = COMPASS_SIZE / 2 - compassRadius * Math.cos(kaabaRadians) - Math.round(16 * SCALE);
-    
-    // Check if user is facing Qibla direction (within 15 degrees tolerance)
-    const angleDiff = Math.abs(((heading - qiblaDegrees + 540) % 360) - 180);
-    isNearQibla = angleDiff < 15;
+    const iconHalf = Math.round(16 * SCALE);
+    const marginOutside = Math.round(16 * SCALE);
+    const outsideRadius = COMPASS_SIZE / 2 + marginOutside; // push outside the circle
+
+    kaabaX = COMPASS_SIZE / 2 + outsideRadius * Math.sin(kaabaRadians) - iconHalf;
+    kaabaY = COMPASS_SIZE / 2 - outsideRadius * Math.cos(kaabaRadians) - iconHalf;
+
+    // If we have heading, show near-Qibla highlight
+    if (heading !== null) {
+      const angleDiff = Math.abs(((heading - qiblaDegrees + 540) % 360) - 180);
+      isNearQibla = angleDiff < 15;
+    }
   }
   
   const kaabaIconSize = Math.round((isNearQibla ? 64 : 32) * SCALE); // 2x larger when near Qibla
@@ -154,7 +145,7 @@ export default function QiblaTab() {
                     backgroundColor: Colors[colorScheme].background 
                   }]} />
                   
-                  {/* Kaaba icon positioned at Qibla direction */}
+                  {/* Kaaba icon positioned relative to North (stable) */}
                   {qiblaDegrees !== null && (
                     <View 
                       style={[
@@ -360,6 +351,7 @@ const styles = StyleSheet.create({
     position: 'relative',
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'visible',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,

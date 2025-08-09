@@ -3,9 +3,9 @@ import { Colors } from '@/constants/Colors';
 import { PrayerKey } from '@/constants/Prayer';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { usePrayerTimes } from '@/hooks/usePrayerTimes';
-import { playAdhan } from '@/services/audio';
+import { playAdhan, stopAdhan } from '@/services/audio';
 import { Ionicons } from '@expo/vector-icons';
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Dimensions, SafeAreaView, ScrollView, Switch, TouchableOpacity, View } from 'react-native';
 
@@ -102,7 +102,23 @@ export default function CalendarTab() {
   }
   const weekStartSelected = useMemo(() => getWeekStart(selectedDate), [selectedDate]);
 
-  const handlePlayAdhan = async () => {
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      // Ensure audio is stopped when leaving the screen
+      stopAdhan().catch(() => {});
+    };
+  }, []);
+
+  const handleToggleAdhan = async () => {
+    if (isPlaying) {
+      try {
+        await stopAdhan();
+      } catch {}
+      setIsPlaying(false);
+      return;
+    }
     try {
       // Attempt to play bundled adhan audio if present (mp3 variants)
       let ok = await playAdhan({ localModule: require('../../assets/sounds/adhan01.mp3'), volume: 1.0, shouldLoop: false });
@@ -117,8 +133,9 @@ export default function CalendarTab() {
       }
       if (!ok) {
         // Fallback: try without explicit module (no-op if not configured)
-        await playAdhan();
+        ok = await playAdhan();
       }
+      if (ok) setIsPlaying(true);
     } catch {
       // ignore playback errors
     }
@@ -250,12 +267,14 @@ export default function CalendarTab() {
             <ThemedText style={{ fontSize: COUNTDOWN_DIGIT_FS, fontWeight: 'bold', color: Colors[colorScheme].text, fontFamily: 'monospace' }}>{String(countdown.seconds).padStart(2, '0')}</ThemedText>
           </View>
           <TouchableOpacity
-            onPress={handlePlayAdhan}
+            onPress={handleToggleAdhan}
             style={{ marginTop: 10, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 12, backgroundColor: Colors[colorScheme].primary }}
             activeOpacity={0.85}
           >
-            <Ionicons name="volume-high" size={18} color={Colors[colorScheme].background} />
-            <ThemedText style={{ marginLeft: 8, color: Colors[colorScheme].background, fontWeight: 'bold' }}>{t('play_adhan', { defaultValue: 'Play Adhan' })}</ThemedText>
+            <Ionicons name={isPlaying ? 'stop' : 'volume-high'} size={18} color={Colors[colorScheme].background} />
+            <ThemedText style={{ marginLeft: 8, color: Colors[colorScheme].background, fontWeight: 'bold' }}>
+              {isPlaying ? t('stop', { defaultValue: 'Stop' }) : t('play_adhan', { defaultValue: 'Play Adhan' })}
+            </ThemedText>
           </TouchableOpacity>
         </View>
         )}

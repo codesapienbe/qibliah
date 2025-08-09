@@ -19,7 +19,7 @@ const defaultReminderMap: ReminderEnabledMap = NOTIFIABLE_PRAYER_KEYS.reduce((ac
 }, {} as ReminderEnabledMap);
 
 export function usePrayerTimes(selectedDate?: Date) {
-  const { location, requestPermission, getCurrentLocation, permissionDenied, setManualLocation } = useLocation();
+  const { location, requestPermission, getCurrentLocation, permissionDenied, setManualLocation, getDeviceTimezone } = useLocation();
   const [times, setTimes] = useState<PrayerTimesMap | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -60,6 +60,15 @@ export function usePrayerTimes(selectedDate?: Date) {
         if (tz && SUPPORTED_TIMEZONES.includes(tz as SupportedTimezone)) {
           setSelectedTimezone(tz as SupportedTimezone);
           setTimezoneChosen(true);
+        } else {
+          // Default to device timezone if supported
+          const deviceTz = getDeviceTimezone();
+          if (SUPPORTED_TIMEZONES.includes(deviceTz as SupportedTimezone)) {
+            setSelectedTimezone(deviceTz as SupportedTimezone);
+          } else {
+            setSelectedTimezone(DEFAULT_TIMEZONE);
+          }
+          setTimezoneChosen(false);
         }
       } catch {}
     })();

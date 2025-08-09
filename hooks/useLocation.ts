@@ -69,12 +69,10 @@ export function useLocation() {
       setErrorMsg(null);
       setPermissionGranted(true);
       setPermissionDenied(false);
-      // Debug log for verification (remove in production)
-      console.log('Location obtained:', newLocation);
-      console.log('Accuracy:', loc.coords.accuracy, 'meters');
+      // persist last known good location for fallback
+      await AsyncStorage.setItem('@last_known_location', JSON.stringify(newLocation));
     } catch (error: any) {
       logError(error, 'useLocation: getCurrentLocation');
-      console.error('Location error:', error);
       if (error.code === 'E_LOCATION_TIMEOUT') {
         setErrorMsg('Location request timed out. Please try again.');
       } else if (error.code === 'E_LOCATION_UNAVAILABLE') {
@@ -86,6 +84,16 @@ export function useLocation() {
       }
       setPermissionGranted(false);
       setPermissionDenied(true);
+      // fallback: use last known or manual
+      try {
+        const raw = await AsyncStorage.getItem('@last_known_location');
+        if (raw) {
+          const last = JSON.parse(raw);
+          if (typeof last?.lat === 'number' && typeof last?.lng === 'number') {
+            setLocation(last);
+          }
+        }
+      } catch {}
     } finally {
       setLoading(false);
     }
@@ -107,7 +115,29 @@ export function useLocation() {
   }, []);
 
   // Use manual location if provided and permission is denied
-  const effectiveLocation = permissionDenied && manualLocation ? manualLocation : location;
+  let effectiveLocation = permissionDenied && manualLocation ? manualLocation : location;
+  // final fallback: try last known, then a safe default (e.g., Zele, BE)
+  useEffect(() => {
+    (async () => {
+      if (!effectiveLocation) {
+        try {
+          const raw = await AsyncStorage.getItem('@last_known_location');
+          if (raw) {
+            const last = JSON.parse(raw);
+            if (typeof last?.lat === 'number' && typeof last?.lng === 'number') {
+              setLocation(last);
+              return;
+            }
+          }
+        } catch {}
+        // hard fallback
+        setLocation({ lat: 51.066, lng: 4.067 });
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const getDeviceTimezone = () => Intl.DateTimeFormat().resolvedOptions().timeZone;
 
   return {
     location: effectiveLocation,
@@ -119,5 +149,6 @@ export function useLocation() {
     permissionGranted,
     permissionDenied,
     setManualLocation: setManualLocationWithStorage,
+    getDeviceTimezone,
   };
 }
