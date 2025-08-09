@@ -104,8 +104,17 @@ export default function CalendarTab() {
 
   const handlePlayAdhan = async () => {
     try {
-      // Attempt to play bundled adhan audio if present
-      const ok = await playAdhan({ localModule: require('../../assets/sounds/adhan.wav'), volume: 1.0, shouldLoop: false });
+      // Attempt to play bundled adhan audio if present (mp3 variants)
+      let ok = await playAdhan({ localModule: require('../../assets/sounds/adhan01.mp3'), volume: 1.0, shouldLoop: false });
+      if (!ok) {
+        try { ok = await playAdhan({ localModule: require('../../assets/sounds/adhan02.mp3'), volume: 1.0, shouldLoop: false }); } catch {}
+      }
+      if (!ok) {
+        try { ok = await playAdhan({ localModule: require('../../assets/sounds/adhan03.mp3'), volume: 1.0, shouldLoop: false }); } catch {}
+      }
+      if (!ok) {
+        try { ok = await playAdhan({ localModule: require('../../assets/sounds/adhan04.mp3'), volume: 1.0, shouldLoop: false }); } catch {}
+      }
       if (!ok) {
         // Fallback: try without explicit module (no-op if not configured)
         await playAdhan();
