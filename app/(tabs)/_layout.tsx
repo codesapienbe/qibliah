@@ -80,6 +80,23 @@ export default function TabLayout() {
           ),
         }}
       />
+      {/* New Prayer tab */}
+      <Tabs.Screen
+        name="prayer"
+        options={{
+          title: t('prayer'),
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="hands.sparkles" color={color} />,
+          headerLeft: () => (
+            <TouchableOpacity
+              onPress={() => DeviceEventEmitter.emit('PRAYER_COACH_INFO')}
+              style={{ paddingLeft: 12 }}
+              accessibilityLabel={t('prayer_coach_info', { defaultValue: 'Prayer coach info' })}
+            >
+              <Ionicons name="information-circle-outline" size={20} color={Colors[colorScheme ?? 'light'].tint} />
+            </TouchableOpacity>
+          ),
+        }}
+      />
       <Tabs.Screen
         name="qibla"
         options={{

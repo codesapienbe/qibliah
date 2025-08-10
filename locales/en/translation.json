@@ -124,5 +124,14 @@
   "continue": "Continue",
   "close": "Close",
   "change_location_timezone": "Change Location / Timezone",
-  "listening": "Listening..."
+  "listening": "Listening...",
+  "prayer_coach_title": "Prayer Coach",
+  "prayer_coach_subtitle": "Gentle, step-by-step guidance with short voice prompts and haptic cues.",
+  "prayer_coach_quick_start": "Quick Start",
+  "prayer_coach_quick_start_hint": "Hold your phone in your hand or keep it nearby. Tap the button below to begin.",
+  "prayer_coach_start": "Start Guidance",
+  "prayer_coach_tip_voice": "Use short whisper-level commands like: \"next\", \"repeat\".",
+  "prayer_coach_tip_tap": "Triple-tap the phone back gently to advance if voice is uncomfortable.",
+  "prayer_coach_tip_safety": "Focus on your prayer. The phone will keep prompts minimal.",
+  "prayer_coach_info": "Prayer coach info"
 } 

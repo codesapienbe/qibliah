@@ -69,7 +69,7 @@
       "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
-    "plugins": [
+          "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
@@ -91,6 +91,14 @@
         "expo-notifications",
         {
           "iosDisplayInForeground": true
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "useFrameworks": "static"
+          }
         }
       ]
     ],
