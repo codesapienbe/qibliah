@@ -69,6 +69,15 @@ export default function TabLayout() {
         options={{
           title: t('calendar'),
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="calendar" color={color} />, // Calendar tab
+          headerLeft: () => (
+            <TouchableOpacity
+              onPress={() => DeviceEventEmitter.emit('CALENDAR_SOTD')}
+              style={{ paddingLeft: 12 }}
+              accessibilityLabel={t('surah_of_the_day', { defaultValue: 'Surah of the Day' })}
+            >
+              <Ionicons name="book-outline" size={20} color={Colors[colorScheme ?? 'light'].tint} />
+            </TouchableOpacity>
+          ),
         }}
       />
       <Tabs.Screen

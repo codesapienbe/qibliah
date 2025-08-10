@@ -9,13 +9,15 @@ import { playAdhan, stopAdhan } from '@/services/audio';
 import { initNotifications } from '@/services/notifications';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Dimensions, SafeAreaView, ScrollView, Switch, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, DeviceEventEmitter, Dimensions, SafeAreaView, ScrollView, Switch, TouchableOpacity, View } from 'react-native';
 
 export default function CalendarTab() {
   const colorScheme = useColorScheme() ?? 'light';
   const { t } = useTranslation();
+  const router = useRouter();
   const today = new Date();
   const [currentDate, setCurrentDate] = useState(today);
   const [selectedDate, setSelectedDate] = useState(today);
@@ -141,6 +143,15 @@ export default function CalendarTab() {
       return () => { isActive = false; };
     }, [requestLocationPermission, getCurrentLocation])
   );
+
+  useEffect(() => {
+    const sub = DeviceEventEmitter.addListener('CALENDAR_SOTD', () => {
+      // Navigate to home and ask for Surah of the Day
+      try { router.push('/(tabs)'); } catch {}
+      DeviceEventEmitter.emit('HOME_SOTD');
+    });
+    return () => sub.remove();
+  }, [router]);
 
   const handleToggleAdhan = async () => {
     if (isPlaying) {

@@ -88,8 +88,14 @@ export default function HomeScreen() {
     const sub = DeviceEventEmitter.addListener('CLEAR_CHAT', () => {
       setMessages([{ ...INITIAL_MESSAGES[0], text: t('assistant_welcome') }]);
     });
+    const sotd = DeviceEventEmitter.addListener('HOME_SOTD', () => {
+      const prompt = t('surah_of_the_day_prompt', { defaultValue: 'Give me a Surah of the Day with a brief ayah and reflection.' });
+      setInput(prompt);
+      setTimeout(() => { handleSend(); }, 100);
+    });
     return () => {
       sub.remove();
+      sotd.remove();
     };
   }, []);
 
