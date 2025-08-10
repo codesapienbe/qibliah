@@ -1,9 +1,11 @@
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { useLocation } from '@/hooks/useLocation';
+import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Linking, Platform, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { DeviceEventEmitter, Linking, Platform, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -351,14 +353,25 @@ export default function MasjidsTab() {
   const colorScheme = useColorScheme() ?? 'light';
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
+  const [query, setQuery] = React.useState('');
   const [selectedMasjid, setSelectedMasjid] = React.useState<{
     id: number;
     name: string;
     address: string;
     coordinates: [number, number] | null;
   } | null>(null);
+  const { location, requestPermission, getCurrentLocation } = useLocation();
+  const [pendingCenter, setPendingCenter] = React.useState(false);
 
-  const markers = (MASJIDS.filter((m: any) => Array.isArray(m.coordinates) && m.coordinates.length === 2) as Array<{
+  const filtered = React.useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return MASJIDS;
+    return MASJIDS.filter((m: any) =>
+      (m.name || '').toLowerCase().includes(q) || (m.address || '').toLowerCase().includes(q)
+    );
+  }, [query]);
+
+  const markers = (filtered.filter((m: any) => Array.isArray(m.coordinates) && m.coordinates.length === 2) as Array<{
     id: number;
     name: string;
     address: string;
@@ -393,6 +406,20 @@ export default function MasjidsTab() {
   };
 
   const initialRegion = computeInitialRegion();
+  const mapRef = React.useRef<MapView | null>(null);
+
+  // Compute nearest masjids (with or without coordinates); for now, use those with coordinates and sort by distance to region center
+  const nearest = React.useMemo(() => {
+    const centerLat = initialRegion.latitude;
+    const centerLng = initialRegion.longitude;
+    const coords = (MASJIDS.filter((m: any) => Array.isArray(m.coordinates) && m.coordinates.length === 2) as Array<any>);
+    const withDist = coords.map(m => {
+      const [lat, lng] = m.coordinates as [number, number];
+      const d = Math.hypot(lat - centerLat, lng - centerLng);
+      return { ...m, d };
+    });
+    return withDist.sort((a, b) => a.d - b.d).slice(0, 12);
+  }, [initialRegion.latitude, initialRegion.longitude]);
 
   function openInMaps(name: string, address: string, coords?: [number, number] | null) {
     const encodedName = encodeURIComponent(name);
@@ -427,11 +454,78 @@ export default function MasjidsTab() {
 
   const handleCancel = () => setSelectedMasjid(null);
 
+  const handleFindMe = React.useCallback(async () => {
+    const granted = await requestPermission();
+    if (!granted) return;
+    setPendingCenter(true);
+    await getCurrentLocation();
+  }, [requestPermission, getCurrentLocation]);
+
+  React.useEffect(() => {
+    const sub = DeviceEventEmitter.addListener('MASJIDS_LOCATE', handleFindMe);
+    return () => sub.remove();
+  }, [handleFindMe]);
+
+  React.useEffect(() => {
+    if (pendingCenter && location && mapRef.current) {
+      const region = {
+        latitude: location.lat,
+        longitude: location.lng,
+        latitudeDelta: 0.05,
+        longitudeDelta: 0.05,
+      };
+      mapRef.current.animateToRegion(region, 400);
+      setPendingCenter(false);
+      setSelectedMasjid(null);
+    }
+  }, [pendingCenter, location]);
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Colors[colorScheme].background, paddingTop: 16 }}>
       <View style={{ flex: 1 }}>
+        {/* Nearest Masjids Chips */}
+        <View style={{ position: 'absolute', top: Math.max(12, insets.top), left: 0, right: 0, zIndex: 21 }}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 12, gap: 8 }}>
+            {nearest.map((m: any) => (
+              <TouchableOpacity
+                key={`chip-${m.id}`}
+                style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 16, backgroundColor: Colors[colorScheme].surface, borderWidth: 1, borderColor: Colors[colorScheme].cardBorder }}
+                onPress={() => {
+                  if (Array.isArray(m.coordinates)) {
+                    const [lat, lng] = m.coordinates as [number, number];
+                    mapRef.current?.animateToRegion({ latitude: lat, longitude: lng, latitudeDelta: 0.1, longitudeDelta: 0.1 }, 400);
+                    setSelectedMasjid(m);
+                  }
+                }}
+                activeOpacity={0.85}
+              >
+                <Text style={{ color: Colors[colorScheme].text, fontWeight: '600' }} numberOfLines={1}>{m.name}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+        {/* Search Bar */}
+        <View style={{ position: 'absolute', top: Math.max(52, insets.top + 40), left: 12, right: 12, zIndex: 20 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: Colors[colorScheme].surface, borderRadius: 12, borderWidth: 1, borderColor: Colors[colorScheme].cardBorder, paddingHorizontal: 10, paddingVertical: 8, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4 }}>
+            <Ionicons name="search" size={18} color={Colors[colorScheme].secondary} />
+            <TextInput
+              placeholder={t('search', { defaultValue: 'Search masjids...' })}
+              placeholderTextColor={Colors[colorScheme].secondary}
+              value={query}
+              onChangeText={setQuery}
+              style={{ flex: 1, marginLeft: 8, color: Colors[colorScheme].text }}
+              returnKeyType="search"
+            />
+            {query.length > 0 && (
+              <TouchableOpacity onPress={() => setQuery('')}>
+                <Ionicons name="close-circle" size={18} color={Colors[colorScheme].secondary} />
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
         <MapView
           style={{ flex: 1 }}
+          ref={(r) => { mapRef.current = r; }}
           initialRegion={initialRegion}
           onPress={() => setSelectedMasjid(null)}
           onMarkerPress={(e: any) => {

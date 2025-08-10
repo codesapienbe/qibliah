@@ -1,8 +1,7 @@
-import { Tabs } from 'expo-router';
-import React from 'react';
-import { Platform, TouchableOpacity } from 'react-native';
-import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { Tabs, useRouter } from 'expo-router';
+import React from 'react';
+import { Alert, DeviceEventEmitter, Platform, TouchableOpacity } from 'react-native';
 
 import { HapticTab } from '@/components/HapticTab';
 import { IconSymbol } from '@/components/ui/IconSymbol';
@@ -41,6 +40,28 @@ export default function TabLayout() {
         options={{
           title: t('home'),
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          headerLeft: () => (
+            <TouchableOpacity
+              onPress={() => {
+                Alert.alert(
+                  t('clear_chat_title', { defaultValue: 'Clear chat?' }),
+                  t('clear_chat_message', { defaultValue: 'This will remove the conversation.' }),
+                  [
+                    { text: t('cancel'), style: 'cancel' as const },
+                    {
+                      text: t('clear', { defaultValue: 'Clear' }),
+                      style: 'destructive' as const,
+                      onPress: () => DeviceEventEmitter.emit('CLEAR_CHAT'),
+                    },
+                  ]
+                );
+              }}
+              style={{ paddingLeft: 12 }}
+              accessibilityLabel={t('clear')}
+            >
+              <Ionicons name="trash-outline" size={20} color={Colors[colorScheme ?? 'light'].tint} />
+            </TouchableOpacity>
+          ),
         }}
       />
       <Tabs.Screen
@@ -62,6 +83,15 @@ export default function TabLayout() {
         options={{
           title: t('masjids'),
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="mappin" color={color} />,
+          headerLeft: () => (
+            <TouchableOpacity
+              onPress={() => DeviceEventEmitter.emit('MASJIDS_LOCATE')}
+              style={{ paddingLeft: 12 }}
+              accessibilityLabel={t('locate_me', { defaultValue: 'Locate me' })}
+            >
+              <Ionicons name="locate-outline" size={20} color={Colors[colorScheme ?? 'light'].tint} />
+            </TouchableOpacity>
+          ),
         }}
       />
     </Tabs>

@@ -17,7 +17,7 @@ import MapView, { Marker, Polyline } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const SCALE = 0.8;
-const COMPASS_SIZE = Math.round(240 * SCALE);
+const COMPASS_SIZE = Math.round(280 * SCALE);
 
 // Real Kaaba coordinates
 const KAABA = {

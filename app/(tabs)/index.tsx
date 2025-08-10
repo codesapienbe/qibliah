@@ -19,8 +19,7 @@ import * as Sharing from 'expo-sharing';
 import * as Speech from 'expo-speech';
 import { useTranslation } from 'react-i18next';
 import {
-  Alert,
-  FlatList,
+  Alert, DeviceEventEmitter, FlatList,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
@@ -65,6 +64,7 @@ export default function HomeScreen() {
   const [expandedMessageIds, setExpandedMessageIds] = useState<Set<string>>(new Set());
   const MAX_MESSAGE_CHARS = 1000;
   const [showInfo, setShowInfo] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
 
   // Perplexity-style suggested prompts shown when there is no user message yet
   const SUGGESTED_PROMPTS: string[] = [
@@ -85,6 +85,12 @@ export default function HomeScreen() {
         setShowingMasked(true);
       }
     })();
+    const sub = DeviceEventEmitter.addListener('CLEAR_CHAT', () => {
+      setMessages([{ ...INITIAL_MESSAGES[0], text: t('assistant_welcome') }]);
+    });
+    return () => {
+      sub.remove();
+    };
   }, []);
 
   // Refresh Groq token whenever this tab gains focus (e.g., after returning from Settings)
@@ -125,8 +131,35 @@ export default function HomeScreen() {
 
   // Only use Quran as source for now
   const speechLang = 'en-US';
-  const ttsEnabled = false;
-  const selectedVoice = null;
+  const [ttsEnabled, setTtsEnabled] = useState(true);
+  const [selectedVoice, setSelectedVoice] = useState<any | null>(null);
+
+  // Choose a high-quality male voice if available
+  React.useEffect(() => {
+    let isActive = true;
+    (async () => {
+      try {
+        const voices: any[] = await Speech.getAvailableVoicesAsync();
+        const lang = i18n.language === 'tr' ? 'tr-TR' : i18n.language === 'nl' ? 'nl-NL' : 'en-US';
+        const base = lang.split('-')[0];
+        const inLanguage = voices.filter(v => (v.language || '').toLowerCase().startsWith(base.toLowerCase()));
+        const isMaleLike = (v: any) => /male|man|alex|daniel|fred|jorge|juan|onur|murat|mehmet|hans|pieter|willem/i.test(`${v.name || ''} ${v.identifier || ''}`);
+        const byQuality = (a: any, b: any) => ((b.quality === 'Enhanced') as any) - ((a.quality === 'Enhanced') as any);
+        let pick = inLanguage.filter(isMaleLike).sort(byQuality)[0]
+          || voices.filter(isMaleLike).sort(byQuality)[0]
+          || inLanguage.sort(byQuality)[0]
+          || voices[0]
+          || null;
+        if (isActive) {
+          setSelectedVoice(pick);
+          setTtsEnabled(!!pick);
+        }
+      } catch {
+        if (isActive) setTtsEnabled(false);
+      }
+    })();
+    return () => { isActive = false; };
+  }, [i18n.language]);
 
   const handleClearChat = () => {
     Alert.alert(
@@ -173,11 +206,27 @@ export default function HomeScreen() {
     }
   };
 
-  const handleSpeak = (text: string) => {
+  const handleSpeak = async (text: string) => {
     let lang = 'en-US';
     if (i18n.language === 'tr') lang = 'tr-TR';
     else if (i18n.language === 'nl') lang = 'nl-NL';
-    Speech.speak(text, { language: lang });
+    try {
+      const speaking = await Speech.isSpeakingAsync();
+      if (speaking || isSpeaking) {
+        await Speech.stop();
+        setIsSpeaking(false);
+        return;
+      }
+    } catch {}
+    setIsSpeaking(true);
+    Speech.speak(text, {
+      language: lang,
+      voice: selectedVoice?.identifier,
+      rate: 0.95,
+      pitch: 0.9,
+      onDone: () => { setIsSpeaking(false); },
+      onStopped: () => { setIsSpeaking(false); },
+    } as any);
   };
 
   // Update input when voice recognition result comes in
@@ -319,7 +368,7 @@ export default function HomeScreen() {
             ]}
             activeOpacity={0.7}
           >
-            <Ionicons name="volume-high-outline" size={22} color={Colors[colorScheme].icon} />
+            <Ionicons name={isSpeaking ? "stop-circle-outline" : "volume-high-outline"} size={22} color={isSpeaking ? Colors[colorScheme].primary : Colors[colorScheme].icon} />
           </TouchableOpacity>
           <View style={[styles.avatarCircle, { backgroundColor: Colors[colorScheme].surface, borderColor: Colors[colorScheme].primary }] }>
             <Ionicons name="chatbubbles" size={22} color={Colors[colorScheme].icon} />
@@ -412,22 +461,8 @@ export default function HomeScreen() {
 
   // Add a modal or prompt for API key
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: Colors[colorScheme].background, paddingTop: 16 }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors[colorScheme].background, paddingTop: 24 }}>
       <View style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <ThemedText style={{ fontSize: 22, fontWeight: 'bold', color: Colors[colorScheme].primary }}>Qibliah AI</ThemedText>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            <TouchableOpacity onPress={() => setShowApiKeyPrompt(true)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-              <Ionicons name="key-outline" size={20} color={groqApiKey ? Colors[colorScheme].secondary : Colors[colorScheme].error} />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={handleShowInfo} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-              <Ionicons name="information-circle-outline" size={22} color={Colors[colorScheme].primary} />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={handleClearChat} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-              <Ionicons name="trash-outline" size={20} color={Colors[colorScheme].error} />
-            </TouchableOpacity>
-          </View>
-        </View>
         <ThemedText numberOfLines={1} style={{ marginTop: 4, color: Colors[colorScheme].secondary }}>
           {t('next_prayer')}: {nextPrayerKey ? t(nextPrayerKey.toLowerCase(), { defaultValue: nextPrayerKey }) : '—'} {nextPrayerTimeString ?? '—'} — {String(countdown.hours).padStart(2, '0')}:{String(countdown.minutes).padStart(2, '0')}:{String(countdown.seconds).padStart(2, '0')}
         </ThemedText>
@@ -438,6 +473,14 @@ export default function HomeScreen() {
                 <ThemedText style={[styles.chipText, { color: Colors[colorScheme].text }]}>{p}</ThemedText>
               </TouchableOpacity>
             ))}
+            <TouchableOpacity onPress={() => setShowApiKeyPrompt(true)} style={[styles.chip, { borderColor: Colors[colorScheme].cardBorder, backgroundColor: Colors[colorScheme].surface }]}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Ionicons name="key-outline" size={16} color={groqApiKey ? Colors[colorScheme].secondary : Colors[colorScheme].error} />
+                <ThemedText style={[styles.chipText, { color: Colors[colorScheme].text }]}>
+                  {groqApiKey ? t('api_key_set', { defaultValue: 'API key set' }) : t('set_api_key', { defaultValue: 'Set API key' })}
+                </ThemedText>
+              </View>
+            </TouchableOpacity>
           </View>
         )}
       </View>
