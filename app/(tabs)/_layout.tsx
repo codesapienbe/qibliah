@@ -85,6 +85,15 @@ export default function TabLayout() {
         options={{
           title: t('qibla'),
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="location.north" color={color} />,
+          headerLeft: () => (
+            <TouchableOpacity
+              onPress={() => DeviceEventEmitter.emit('QIBLA_INFO')}
+              style={{ paddingLeft: 12 }}
+              accessibilityLabel={t('qibla_info', { defaultValue: 'Qibla info' })}
+            >
+              <Ionicons name="information-circle-outline" size={20} color={Colors[colorScheme ?? 'light'].tint} />
+            </TouchableOpacity>
+          ),
         }}
       />
       <Tabs.Screen

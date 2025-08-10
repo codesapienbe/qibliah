@@ -93,9 +93,15 @@ export default function HomeScreen() {
       setInput(prompt);
       setTimeout(() => { handleSend(); }, 100);
     });
+    const qiblaInfo = DeviceEventEmitter.addListener('HOME_QIBLA_INFO', () => {
+      const prompt = t('qibla_info_prompt', { defaultValue: 'Explain concisely why facing the Kaaba (Qibla) and aligning one’s prayer posture matters, with brief references from Quran and Sunnah.' });
+      setInput(prompt);
+      setTimeout(() => { handleSend(); }, 100);
+    });
     return () => {
       sub.remove();
       sotd.remove();
+      qiblaInfo.remove();
     };
   }, []);
 
