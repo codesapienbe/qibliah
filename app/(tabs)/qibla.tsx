@@ -125,7 +125,7 @@ export default function QiblaTab() {
   const kaabaIconSize = Math.round((isNearQibla ? 64 : 32) * SCALE); // 2x larger when near Qibla
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: Colors[colorScheme].background, paddingTop: 6 }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors[colorScheme].background, paddingTop: 16 }}>
       <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 16, paddingTop: 0, backgroundColor: Colors[colorScheme].background, paddingBottom: 80 }}>
             {/* Compass & Info */}
             <View style={styles.compassContainer}>

@@ -428,7 +428,7 @@ export default function MasjidsTab() {
   const handleCancel = () => setSelectedMasjid(null);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: Colors[colorScheme].background, paddingTop: 6 }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors[colorScheme].background, paddingTop: 16 }}>
       <View style={{ flex: 1 }}>
         <MapView
           style={{ flex: 1 }}

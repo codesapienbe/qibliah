@@ -173,7 +173,7 @@ export default function CalendarTab() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: Colors[colorScheme].background, paddingTop: 6 }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors[colorScheme].background, paddingTop: 16 }}>
       <ScrollView contentContainerStyle={{ flexGrow: 1, backgroundColor: Colors[colorScheme].background }}>
         {/* Calendar Header */}
         <View style={{ alignItems: 'center', marginBottom: Math.round(8 * SCALE) }}>

@@ -65,6 +65,15 @@ export default function HomeScreen() {
   const MAX_MESSAGE_CHARS = 1000;
   const [showInfo, setShowInfo] = useState(false);
 
+  // Perplexity-style suggested prompts shown when there is no user message yet
+  const SUGGESTED_PROMPTS: string[] = [
+    t('suggestion_prayer_times', { defaultValue: 'What are today\'s prayer times here?' }),
+    t('suggestion_qibla', { defaultValue: 'Which way is the Qibla from my location?' }),
+    t('suggestion_quran', { defaultValue: 'Find a Quran verse about patience.' }),
+    t('suggestion_fast', { defaultValue: 'How do I make up missed fasts?' }),
+  ];
+  const hasUserMessages = React.useMemo(() => messages.some(m => m.sender === 'user'), [messages]);
+
   React.useEffect(() => {
     // Load Groq API token from secure storage on mount
     (async () => {
@@ -381,7 +390,7 @@ export default function HomeScreen() {
 
   // Add a modal or prompt for API key
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: Colors[colorScheme].background, paddingTop: 6 }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors[colorScheme].background, paddingTop: 16 }}>
       <View style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <ThemedText style={{ fontSize: 22, fontWeight: 'bold', color: Colors[colorScheme].primary }}>Qibliah AI</ThemedText>
@@ -397,6 +406,15 @@ export default function HomeScreen() {
         <ThemedText numberOfLines={1} style={{ marginTop: 4, color: Colors[colorScheme].secondary }}>
           {t('next_prayer')}: {nextPrayerKey ? t(nextPrayerKey.toLowerCase(), { defaultValue: nextPrayerKey }) : '—'} {nextPrayerTimeString ?? '—'} — {String(countdown.hours).padStart(2, '0')}:{String(countdown.minutes).padStart(2, '0')}:{String(countdown.seconds).padStart(2, '0')}
         </ThemedText>
+        {!hasUserMessages && input.trim().length === 0 && (
+          <View style={styles.suggestionsContainer}>
+            {SUGGESTED_PROMPTS.map((p) => (
+              <TouchableOpacity key={p} onPress={() => { setInput(p); }} style={[styles.chip, { borderColor: Colors[colorScheme].cardBorder, backgroundColor: Colors[colorScheme].surface }]} activeOpacity={0.8}>
+                <ThemedText style={[styles.chipText, { color: Colors[colorScheme].text }]}>{p}</ThemedText>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
       </View>
       {/* Remember Chat Modal */}
       {showRememberModal && (
@@ -783,5 +801,22 @@ const styles = StyleSheet.create({
   loadingDot3: {
     opacity: 0.3,
     transform: [{ scale: 0.6 }],
+  },
+  suggestionsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 12,
+  },
+  chip: {
+    borderWidth: 1,
+    borderRadius: 16,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+  },
+  chipText: {
+    fontSize: 14,
+    lineHeight: 18,
+    fontWeight: '500',
   },
 }); 
