@@ -12,6 +12,7 @@ import { useVoiceInput } from '@/hooks/useVoiceInput';
 import { formatSurahAyatMessage } from '@/utils/formatSurahAyatMessage';
 import { deleteGroqToken, getGroqToken, saveGroqToken } from '@/utils/tokenStorage';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import * as FileSystem from 'expo-file-system';
 import * as ImagePicker from 'expo-image-picker';
 import * as Sharing from 'expo-sharing';
@@ -85,6 +86,27 @@ export default function HomeScreen() {
       }
     })();
   }, []);
+
+  // Refresh Groq token whenever this tab gains focus (e.g., after returning from Settings)
+  useFocusEffect(
+    React.useCallback(() => {
+      let isActive = true;
+      (async () => {
+        try {
+          const storedToken = await getGroqToken();
+          if (!isActive) return;
+          if (storedToken) {
+            setGroqApiKey(storedToken);
+            setTempApiKey('************');
+            setShowingMasked(true);
+          } else {
+            setGroqApiKey(null);
+          }
+        } catch {}
+      })();
+      return () => { isActive = false; };
+    }, [])
+  );
 
   React.useEffect(() => {
     // Update welcome message when language changes
@@ -192,7 +214,7 @@ export default function HomeScreen() {
   const handleSend = async () => {
     if (!input.trim() || sending) return;
     if (!groqApiKey) {
-      // Optionally, show a toast or error, but do not auto-open modal
+      setShowApiKeyPrompt(true);
       return;
     }
     const userMessage = {
@@ -395,6 +417,9 @@ export default function HomeScreen() {
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <ThemedText style={{ fontSize: 22, fontWeight: 'bold', color: Colors[colorScheme].primary }}>Qibliah AI</ThemedText>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <TouchableOpacity onPress={() => setShowApiKeyPrompt(true)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Ionicons name="key-outline" size={20} color={groqApiKey ? Colors[colorScheme].secondary : Colors[colorScheme].error} />
+            </TouchableOpacity>
             <TouchableOpacity onPress={handleShowInfo} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
               <Ionicons name="information-circle-outline" size={22} color={Colors[colorScheme].primary} />
             </TouchableOpacity>
