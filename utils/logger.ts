@@ -1,7 +1,10 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { sendErrorNotification } from '@/services/notifications';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const LOG_KEY = 'APP_ERROR_LOGS';
+
+const lastNotifyAtByKey: Record<string, number> = {};
+const lastLogAtByKey: Record<string, number> = {};
 
 function generateErrorCode(input: string): string {
   let hash = 0;
@@ -13,9 +16,29 @@ function generateErrorCode(input: string): string {
   return 'ERR-' + hex.slice(0, 6).padStart(6, '0');
 }
 
-export async function logError(error: any, context: string = ''): Promise<string> {
+export interface LogErrorOptions {
+  notify?: boolean; // default true
+  throttleKey?: string; // if provided, both logging and notifications throttle by this key
+  throttleMs?: number; // default 60000ms when throttleKey is present
+}
+
+export async function logError(error: any, context: string = '', options: LogErrorOptions = {}): Promise<string> {
   const canonical = `${context}::${error?.message || String(error)}::${error?.stack || ''}`;
   const code = generateErrorCode(canonical);
+
+  const throttleKey = options.throttleKey;
+  const now = Date.now();
+  const throttleMs = typeof options.throttleMs === 'number' ? Math.max(0, options.throttleMs) : 60000;
+
+  // Throttle both logging and notifications if a key is provided
+  if (throttleKey) {
+    const lastLog = lastLogAtByKey[throttleKey] || 0;
+    if (now - lastLog < throttleMs) {
+      return code;
+    }
+    lastLogAtByKey[throttleKey] = now;
+  }
+
   try {
     const prev = await AsyncStorage.getItem(LOG_KEY);
     const logs = prev ? JSON.parse(prev) : [];
@@ -32,10 +55,20 @@ export async function logError(error: any, context: string = ''): Promise<string
     console.warn('Failed to log error:', storageError);
   }
 
-  try {
-    await sendErrorNotification(code, context, error?.message);
-  } catch {
-    // ignore notification errors
+  const shouldNotify = options.notify !== false;
+  if (shouldNotify) {
+    if (throttleKey) {
+      const last = lastNotifyAtByKey[throttleKey] || 0;
+      if (now - last < throttleMs) {
+        return code; // skip notification due to throttle
+      }
+      lastNotifyAtByKey[throttleKey] = now;
+    }
+    try {
+      await sendErrorNotification(code, context, error?.message);
+    } catch {
+      // ignore notification errors
+    }
   }
 
   return code;

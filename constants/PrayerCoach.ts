@@ -84,3 +84,12 @@ export const defaultCoachConfig: PrayerCoachConfig = {
   voiceGender: 'male',
   mode: 'click',
 };
+
+// Rakat counts per obligatory prayer
+export const PRAyerRakatByKey: Record<'Fajr' | 'Dhuhr' | 'Asr' | 'Maghrib' | 'Isha', number> = {
+  Fajr: 2,
+  Dhuhr: 4,
+  Asr: 4,
+  Maghrib: 3,
+  Isha: 4,
+};

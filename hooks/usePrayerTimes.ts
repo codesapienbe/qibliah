@@ -3,7 +3,7 @@ import { NOTIFIABLE_PRAYER_KEYS, PrayerKey } from '@/constants/Prayer';
 import { DEFAULT_TIMEZONE, SUPPORTED_TIMEZONES, SupportedTimezone } from '@/constants/Timezones';
 import { useLocation } from '@/hooks/useLocation';
 import { cancelPrayerNotifications, initNotifications, schedulePrayerNotifications } from '@/services/notifications';
-import { computeCountdown, fetchPrayerTimesFromApi, findNextPrayer, formatTimeHHMM, PrayerTimesMap, toDisplayRows } from '@/utils/prayerTimes';
+import { computeCountdown, determineEffectivePrayer, fetchPrayerTimesFromApi, findNextPrayer, formatTimeHHMM, PrayerTimesMap, toDisplayRows } from '@/utils/prayerTimes';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
@@ -150,6 +150,15 @@ export function usePrayerTimes(selectedDate?: Date) {
 
   const rows = useMemo(() => (times ? toDisplayRows(times) : []), [times]);
 
+  const effective = useMemo(() => {
+    if (!times) return null;
+    try {
+      return determineEffectivePrayer(times, now, 30);
+    } catch {
+      return null;
+    }
+  }, [times, now]);
+
   const toggleReminder = useCallback(async (key: PrayerKey) => {
     const nextMap = { ...reminderEnabled, [key]: !reminderEnabled[key] };
     setReminderEnabled(nextMap);
@@ -191,6 +200,9 @@ export function usePrayerTimes(selectedDate?: Date) {
     nextPrayerKey: next?.key ?? null,
     nextPrayerTime: next?.time ?? null,
     nextPrayerTimeString: next?.time ? formatTimeHHMM(next.time) : null,
+    effectivePrayerKey: effective?.key ?? null,
+    effectivePrayerTime: effective?.refTime ?? null,
+    effectivePrayerTimeString: effective?.refTime ? formatTimeHHMM(effective.refTime) : null,
     countdown,
     reminderEnabled,
     toggleReminder,
@@ -207,5 +219,7 @@ export function usePrayerTimes(selectedDate?: Date) {
     requestLocationPermission: requestPermission,
     getCurrentLocation,
     setManualLocation,
+    // expose raw map for advanced consumers
+    times,
   };
 }

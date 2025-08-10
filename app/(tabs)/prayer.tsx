@@ -1,14 +1,14 @@
 import { Collapsible } from '@/components/Collapsible';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import type { PrayerCoachMode } from '@/constants/PrayerCoach';
 import { usePrayerCoach } from '@/hooks/usePrayerCoach';
+import { readAllPrayerEvents } from '@/services/prayerLog';
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { DeviceEventEmitter, StyleSheet, Switch, TextInput, View } from 'react-native';
 import { TouchableOpacity } from 'react-native-gesture-handler';
-import { readAllPrayerEvents } from '@/services/prayerLog';
-import type { PrayerCoachMode } from '@/constants/PrayerCoach';
 
 export default function PrayerScreen() {
   const { t } = useTranslation();
@@ -121,42 +121,74 @@ export default function PrayerScreen() {
         </ThemedText>
         <ThemedText style={styles.cardHint}>
           {t('prayer_coach_quick_start_hint', {
-            defaultValue: 'Hold your phone in your hand or keep it nearby. Tap the button below to begin.',
+            defaultValue: 'Hold the phone or keep it nearby. Start when ready. Say "prev", "next", or "repeat" in Listen mode.',
           })}
         </ThemedText>
 
         {!coach.state.active ? (
           <TouchableOpacity
             accessibilityRole="button"
-            style={styles.startButton}
+            style={[styles.startButton, styles.primaryButton]}
             onPress={() => coach.start({ totalRakat: rakat, autoAdvanceFromPose: autoAdvance, language: voiceLang, voiceGender, mode })}
           >
-            <Ionicons name="play" size={18} color="#fff" />
+            <Ionicons name="play" size={20} color="#fff" />
             <ThemedText style={styles.startButtonText}>
-              {t('prayer_coach_start', { defaultValue: 'Start Guidance' })}
+              {t('prayer_coach_start', { defaultValue: 'Start' })}
             </ThemedText>
           </TouchableOpacity>
         ) : (
-          <View style={{ flexDirection: 'row', gap: 8 }}>
-            <TouchableOpacity accessibilityRole="button" style={[styles.startButton, { backgroundColor: '#d9534f' }]} onPress={() => coach.stop()}>
+          <View style={styles.controlsRow}>
+            <TouchableOpacity accessibilityRole="button" style={[styles.controlButton, styles.dangerButton]} onPress={() => coach.stop()}>
               <Ionicons name="stop" size={18} color="#fff" />
-              <ThemedText style={styles.startButtonText}>Stop</ThemedText>
+              <ThemedText style={styles.controlButtonText}>Stop</ThemedText>
             </TouchableOpacity>
-            <TouchableOpacity accessibilityRole="button" style={styles.startButton} onPress={() => coach.next()}>
-              <Ionicons name="play-skip-forward" size={18} color="#fff" />
-              <ThemedText style={styles.startButtonText}>Next</ThemedText>
+            <TouchableOpacity accessibilityRole="button" style={styles.controlButton} onPress={() => coach.prev()}>
+              <Ionicons name="play-skip-back" size={18} color="#fff" />
+              <ThemedText style={styles.controlButtonText}>Prev</ThemedText>
             </TouchableOpacity>
-            <TouchableOpacity accessibilityRole="button" style={styles.startButton} onPress={() => coach.repeat()}>
+            <TouchableOpacity accessibilityRole="button" style={styles.controlButton} onPress={() => coach.repeat()}>
               <Ionicons name="repeat" size={18} color="#fff" />
-              <ThemedText style={styles.startButtonText}>Repeat</ThemedText>
+              <ThemedText style={styles.controlButtonText}>Repeat</ThemedText>
+            </TouchableOpacity>
+            <TouchableOpacity accessibilityRole="button" style={styles.controlButton} onPress={() => coach.next()}>
+              <Ionicons name="play-skip-forward" size={18} color="#fff" />
+              <ThemedText style={styles.controlButtonText}>Next</ThemedText>
             </TouchableOpacity>
           </View>
         )}
       </View>
 
+      {coach.state.active && (
+        <View style={styles.statusCard}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <ThemedText type="subtitle">Live</ThemedText>
+            <View style={{ flexDirection: 'row', gap: 6 }}>
+              <Ionicons name="volume-high-outline" size={18} />
+              <Ionicons name="pulse-outline" size={18} />
+            </View>
+          </View>
+          <ThemedText style={styles.liveText}>Rakat {coach.state.currentRakat} of {coach.state.totalRakat}</ThemedText>
+          <ThemedText style={styles.liveText}>
+            {coach.state.currentStep?.id ?? '-'} {coach.state.currentStep?.hintEn ? `(${coach.state.currentStep?.hintEn})` : ''}
+          </ThemedText>
+
+          <View style={styles.miniControls}>
+            <TouchableOpacity accessibilityRole="button" style={[styles.miniButton]} onPress={() => coach.prev()}>
+              <Ionicons name="play-skip-back" size={18} />
+            </TouchableOpacity>
+            <TouchableOpacity accessibilityRole="button" style={[styles.miniButton]} onPress={() => coach.repeat()}>
+              <Ionicons name="repeat" size={18} />
+            </TouchableOpacity>
+            <TouchableOpacity accessibilityRole="button" style={[styles.miniButton]} onPress={() => coach.next()}>
+              <Ionicons name="play-skip-forward" size={18} />
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
       <View style={styles.infoList}>
         <ThemedText style={styles.infoItem}>
-          • {t('prayer_coach_tip_voice', { defaultValue: 'Use short whisper-level commands like: "next", "repeat".' })}
+          • {t('prayer_coach_tip_voice', { defaultValue: 'Use whisper-level commands: "prev", "next", "repeat".' })}
         </ThemedText>
         <ThemedText style={styles.infoItem}>
           • {t('prayer_coach_tip_tap', { defaultValue: 'Triple-tap the phone back gently to advance if voice is uncomfortable.' })}
@@ -164,24 +196,7 @@ export default function PrayerScreen() {
         <ThemedText style={styles.infoItem}>
           • {t('prayer_coach_tip_safety', { defaultValue: 'Focus on your prayer. The phone will keep prompts minimal.' })}
         </ThemedText>
-        {mode === 'watch' && (
-          <ThemedText style={styles.infoItem}>
-            • Prepare to align the phone so the camera can see your pose. Camera-based recognition will arrive soon.
-          </ThemedText>
-        )}
       </View>
-
-      {coach.state.active && (
-        <View style={styles.statusCard}>
-          <ThemedText type="subtitle">Live</ThemedText>
-          <ThemedText>
-            Rakat: {coach.state.currentRakat}/{coach.state.totalRakat}
-          </ThemedText>
-          <ThemedText>
-            Step: {coach.state.currentStep?.id ?? '-'} ({coach.state.currentStep?.hintEn ?? ''})
-          </ThemedText>
-        </View>
-      )}
     </ThemedView>
   );
 }
@@ -216,6 +231,27 @@ const styles = StyleSheet.create({
   startButton: {
     marginTop: 8,
     alignSelf: 'flex-start',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  primaryButton: {
+    backgroundColor: '#0a7ea4',
+  },
+  startButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  controlsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 4,
+  },
+  controlButton: {
     backgroundColor: '#0a7ea4',
     paddingHorizontal: 14,
     paddingVertical: 10,
@@ -224,8 +260,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
-  startButtonText: {
+  controlButtonText: {
     color: '#fff',
+  },
+  dangerButton: {
+    backgroundColor: '#d9534f',
   },
   infoList: {
     marginTop: 8,
@@ -240,7 +279,11 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: 'rgba(0,0,0,0.1)',
-    gap: 6,
+    gap: 10,
+  },
+  liveText: {
+    fontSize: 16,
+    fontWeight: '600',
   },
   settingsRow: {
     flexDirection: 'row',
@@ -266,5 +309,15 @@ const styles = StyleSheet.create({
   },
   segmentActive: {
     backgroundColor: 'rgba(10, 126, 164, 0.12)',
+  },
+  miniControls: {
+    marginTop: 8,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  miniButton: {
+    padding: 10,
+    borderRadius: 8,
+    backgroundColor: 'rgba(0,0,0,0.05)',
   },
 });

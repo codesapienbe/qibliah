@@ -97,3 +97,40 @@ export function toDisplayRows(times: PrayerTimesMap): Array<{ key: PrayerKey; la
     notifiable: NOTIFIABLE_PRAYER_KEYS.includes(key),
   }));
 }
+
+// New helper: determine effective prayer (among Fajr, Dhuhr, Asr, Maghrib, Isha) using a 30-minute proximity rule
+export function determineEffectivePrayer(
+  times: PrayerTimesMap,
+  now: Date = new Date(),
+  thresholdMinutes: number = 30,
+): { key: PrayerKey; refTime: Date } {
+  // Only consider the five daily obligatory prayers (exclude Sunrise)
+  const keys = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'] as const;
+
+  // Find next prayer among the five
+  const upcoming = (keys
+    .map((k) => ({ key: k as PrayerKey, time: times[k as PrayerKey] }))
+    .filter((pt) => pt.time.getTime() > now.getTime())
+    .sort((a, b) => a.time.getTime() - b.time.getTime()))[0];
+
+  // If none in future today, next is tomorrow Fajr
+  const nextEntry = upcoming || { key: 'Fajr' as PrayerKey, time: new Date(times['Fajr'].getTime() + 24 * 60 * 60 * 1000) };
+
+  // Find previous prayer among the five within today
+  const past = keys
+    .map((k) => ({ key: k as PrayerKey, time: times[k as PrayerKey] }))
+    .filter((pt) => pt.time.getTime() <= now.getTime())
+    .sort((a, b) => b.time.getTime() - a.time.getTime());
+
+  // If none in past today (i.e., before Fajr), use yesterday's Isha approximation (Isha today minus 24h)
+  const previousEntry = past[0] || { key: 'Isha' as PrayerKey, time: new Date(times['Isha'].getTime() - 24 * 60 * 60 * 1000) };
+
+  const msToNext = nextEntry.time.getTime() - now.getTime();
+  const msSincePrev = now.getTime() - previousEntry.time.getTime();
+  const thresholdMs = thresholdMinutes * 60 * 1000;
+
+  if (msToNext <= thresholdMs) {
+    return { key: nextEntry.key, refTime: nextEntry.time };
+  }
+  return { key: previousEntry.key, refTime: previousEntry.time };
+}
