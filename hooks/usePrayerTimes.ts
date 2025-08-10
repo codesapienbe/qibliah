@@ -74,19 +74,10 @@ export function usePrayerTimes(selectedDate?: Date) {
     })();
   }, [dateKey]);
 
-  // Ask for permission and fetch location on mount if not available
+  // Do not auto-request location on mount; screens request on focus to show permission prompts contextually
   useEffect(() => {
-    (async () => {
-      try {
-        const granted = await requestPermission();
-        if (granted) {
-          await getCurrentLocation();
-        }
-      } catch (e: any) {
-        setError(e?.message || 'Failed to get location');
-      }
-    })();
-  }, [requestPermission, getCurrentLocation]);
+    // no-op
+  }, []);
 
   const fetchTimes = useCallback(async () => {
     // Use manual location if permission denied (handled in useLocation)
@@ -212,5 +203,9 @@ export function usePrayerTimes(selectedDate?: Date) {
     mockLocations: MOCK_LOCATIONS,
     selectMockLocation,
     isToday,
+    // expose location controls for focus-based permission handling
+    requestLocationPermission: requestPermission,
+    getCurrentLocation,
+    setManualLocation,
   };
 }

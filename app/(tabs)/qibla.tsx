@@ -3,6 +3,7 @@ import React from 'react';
 import KaabaIcon from '@/components/KaabaIcon';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import TimezoneSelection from '@/components/TimezoneSelection';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { useLocation } from '@/hooks/useLocation';
@@ -32,6 +33,8 @@ export default function QiblaTab() {
     loading: locationLoading,
     requestPermission: requestLocationPermission,
     getCurrentLocation,
+    permissionDenied: locationPermissionDenied,
+    setManualLocation,
   } = useLocation();
   const {
     heading,
@@ -43,6 +46,7 @@ export default function QiblaTab() {
   } = useQiblaDirection();
   const windowHeight = Dimensions.get('window').height;
   const mapHeight = Math.round(windowHeight * 0.33 * SCALE * 0.8);
+  const [showSetup, setShowSetup] = React.useState(false);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -51,6 +55,9 @@ export default function QiblaTab() {
         const locGranted = await requestLocationPermission();
         if (locGranted && isActive) {
           await getCurrentLocation();
+          setShowSetup(false);
+        } else if (!locGranted && isActive) {
+          setShowSetup(true);
         }
         const compassGranted = await requestCompassPermission();
         if (compassGranted && isActive) {
@@ -67,6 +74,9 @@ export default function QiblaTab() {
     const granted = await requestLocationPermission();
     if (granted) {
       await getCurrentLocation();
+      setShowSetup(false);
+    } else {
+      setShowSetup(true);
     }
   }, [requestLocationPermission, getCurrentLocation]);
 
@@ -308,6 +318,21 @@ export default function QiblaTab() {
       >
         <Ionicons name="locate" size={Math.round(26 * SCALE)} color={Colors[colorScheme].icon} />
       </TouchableOpacity>
+
+      {(showSetup || locationPermissionDenied) && (
+        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.4)' }}>
+          <View style={{ flex: 1 }}>
+            <TimezoneSelection
+              onTimezoneSelected={(_tz, loc) => {
+                if (loc) {
+                  setManualLocation(loc);
+                }
+                setShowSetup(false);
+              }}
+            />
+          </View>
+        </View>
+      )}
     </SafeAreaView>
   );
 }

@@ -1,10 +1,14 @@
 import { ThemedText } from '@/components/ThemedText';
+import TimezoneSelection from '@/components/TimezoneSelection';
 import { Colors } from '@/constants/Colors';
 import { PrayerKey } from '@/constants/Prayer';
+import { SupportedTimezone } from '@/constants/Timezones';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { usePrayerTimes } from '@/hooks/usePrayerTimes';
 import { playAdhan, stopAdhan } from '@/services/audio';
+import { initNotifications } from '@/services/notifications';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Dimensions, SafeAreaView, ScrollView, Switch, TouchableOpacity, View } from 'react-native';
@@ -26,6 +30,13 @@ export default function CalendarTab() {
     reminderEnabled,
     toggleReminder,
     isToday,
+    permissionDenied,
+    timezoneChosen,
+    setTimezone,
+    refresh,
+    requestLocationPermission,
+    getCurrentLocation,
+    setManualLocation,
   } = usePrayerTimes(selectedDate);
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -60,7 +71,8 @@ export default function CalendarTab() {
   const PILL_WIDTH = Math.round(92 * SCALE);
   const PILL_HEIGHT = Math.round(36 * SCALE);
   const PILL_RADIUS = Math.round(10 * SCALE);
-  
+  const [showSetup, setShowSetup] = useState(false);
+
   const MONTHS = [
     'january', 'february', 'march', 'april', 'may', 'june',
     'july', 'august', 'september', 'october', 'november', 'december'
@@ -110,6 +122,25 @@ export default function CalendarTab() {
       stopAdhan().catch(() => {});
     };
   }, []);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      let isActive = true;
+      (async () => {
+        try {
+          const granted = await requestLocationPermission();
+          if (granted && isActive) {
+            await getCurrentLocation();
+            setShowSetup(false);
+          } else if (!granted && isActive) {
+            setShowSetup(true);
+          }
+        } catch {}
+        try { await initNotifications(); } catch {}
+      })();
+      return () => { isActive = false; };
+    }, [requestLocationPermission, getCurrentLocation])
+  );
 
   const handleToggleAdhan = async () => {
     if (isPlaying) {
@@ -280,6 +311,25 @@ export default function CalendarTab() {
         )}
         {/* Removed Reminders and Stats sections for now */}
       </ScrollView>
+
+      {(showSetup || permissionDenied || !timezoneChosen) && (
+        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.4)' }}>
+          <View style={{ flex: 1 }}>
+            <TimezoneSelection
+              onTimezoneSelected={async (tz: SupportedTimezone, loc?: { lat: number; lng: number }) => {
+                try {
+                  await setTimezone(tz);
+                  if (loc) {
+                    setManualLocation(loc);
+                  }
+                  await refresh();
+                } catch {}
+                setShowSetup(false);
+              }}
+            />
+          </View>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
