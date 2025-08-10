@@ -3,8 +3,8 @@ import { useMotionDetection } from '@/hooks/useMotionDetection';
 import { usePrayerTimes } from '@/hooks/usePrayerTimes';
 import { useTripleTapDetector } from '@/hooks/useTripleTapDetector';
 import { useVoiceInput } from '@/hooks/useVoiceInput';
-import { setPlayAndRecordAudioMode, setPlaybackAudioMode, speak, speakSegments } from '@/services/audio';
-import { appendPrayerEvent } from '@/services/prayerLog';
+import { setPlayAndRecordAudioMode, setPlaybackAudioMode, speak, speakSegments, stopAllAudio } from '@/services/audio';
+import { appendPrayerEvent, clearPrayerEvents } from '@/services/prayerLog';
 import { determineEffectivePrayer } from '@/utils/prayerTimes';
 import * as Haptics from 'expo-haptics';
 import React from 'react';
@@ -38,18 +38,25 @@ export function usePrayerCoach(): PrayerCoachApi {
     finished: false,
   });
 
+  // Active flag ref to abort in-flight async when stopped
+  const activeRef = React.useRef<boolean>(false);
+  React.useEffect(() => { activeRef.current = state.active; }, [state.active]);
+
   const { results, partial, startContinuous: startVoiceContinuous, stop: stopVoice } = useVoiceInput();
   const { times } = usePrayerTimes();
   const { detectedAt, start: startTripleTap, stop: stopTripleTap } = useTripleTapDetector();
   const { reading, start: startMotion, stop: stopMotion } = useMotionDetection(100);
 
   const say = React.useCallback(async (text: string) => {
+    if (!activeRef.current) return;
     if (config.mode === 'listen') {
       // Temporarily stop listening to avoid iOS session conflicts
       await stopVoice();
       await setPlaybackAudioMode();
       await speak(text, config.language, { gender: config.voiceGender });
+      if (!activeRef.current) return;
       await setPlayAndRecordAudioMode();
+      if (!activeRef.current) return;
       await startVoiceContinuous(config.language);
       return;
     }
@@ -57,6 +64,7 @@ export function usePrayerCoach(): PrayerCoachApi {
   }, [config.language, config.voiceGender, config.mode, stopVoice, startVoiceContinuous]);
 
   const sayStep = React.useCallback(async (step: PrayerStep, opts?: { includeShortSurah?: boolean }) => {
+    if (!activeRef.current) return;
     const segments: Array<{ text: string; lang: string; gender?: 'male' | 'female' }> = [];
     const arabicLang = config.arabicLanguage;
     if (step.id === 'qiyam') {
@@ -83,12 +91,15 @@ export function usePrayerCoach(): PrayerCoachApi {
     if (config.mode === 'listen') {
       await stopVoice();
       await setPlaybackAudioMode();
+      if (!activeRef.current) return;
       if (segments.length === 1) {
         await speak(segments[0].text, segments[0].lang, { gender: segments[0].gender });
       } else if (segments.length > 1) {
         await speakSegments(segments);
       }
+      if (!activeRef.current) return;
       await setPlayAndRecordAudioMode();
+      if (!activeRef.current) return;
       await startVoiceContinuous(config.language);
       return;
     }
@@ -116,7 +127,7 @@ export function usePrayerCoach(): PrayerCoachApi {
     }));
     await appendPrayerEvent({ timestamp: new Date().toISOString(), type: 'next_step', payload: { newIndex, newRakat, stepId: step?.id } });
     await haptic();
-    if (step) {
+    if (step && activeRef.current) {
       const includeShort = newRakat <= 2; // Include short surah for first two rakats only
       await sayStep(step, { includeShortSurah: includeShort });
     }
@@ -234,10 +245,14 @@ export function usePrayerCoach(): PrayerCoachApi {
   const stop = React.useCallback(async () => {
     setState((s) => ({ ...s, active: false }));
     await appendPrayerEvent({ timestamp: new Date().toISOString(), type: 'stop', payload: { reason: 'user' } });
+    // Stop any ongoing audio/speech and reset mode
+    await stopAllAudio();
     stopMotion();
     stopTripleTap();
     stopVoice();
     await setPlaybackAudioMode();
+    // Clear prayer session logs in storage for a clean start next time
+    await clearPrayerEvents();
   }, [stopMotion, stopTripleTap, stopVoice]);
 
   React.useEffect(() => {

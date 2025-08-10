@@ -107,6 +107,19 @@ export async function stopAdhan(): Promise<void> {
   }
 }
 
+export async function stopAllAudio(): Promise<void> {
+  try {
+    const Speech = await ensureSpeechModule();
+    await Speech?.stop?.();
+  } catch {}
+  try {
+    await stopAdhan();
+  } catch {}
+  try {
+    await setPlaybackAudioMode();
+  } catch {}
+}
+
 function pickVoiceForGender(voices: any[], targetGender?: 'male' | 'female', language?: string) {
   if (!Array.isArray(voices)) return undefined;
   const byLang = language ? voices.filter((v: any) => (v.language || '').toLowerCase().startsWith(language.toLowerCase().slice(0,2))) : voices;

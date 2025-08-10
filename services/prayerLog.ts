@@ -39,6 +39,12 @@ export async function readAllPrayerEvents(): Promise<PrayerLogEvent[]> {
   return lines.map((l) => JSON.parse(l));
 }
 
+export async function clearPrayerEvents(): Promise<void> {
+  try {
+    await AsyncStorage.setItem(STORAGE_KEY, '');
+  } catch {}
+}
+
 export function getLogFilePath(): string {
   return 'asyncstorage://' + STORAGE_KEY;
 }
